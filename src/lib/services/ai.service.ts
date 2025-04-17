@@ -1,9 +1,13 @@
 import type { GenerateFlashcardResponseDTO } from "../../types";
-
-// Default timeout for AI operations (3 seconds)
-const AI_TIMEOUT_MS = 3000;
+import { OpenRouterService } from "./openrouter.service";
 
 export class AIService {
+  private readonly openRouterService: OpenRouterService;
+
+  constructor() {
+    this.openRouterService = new OpenRouterService();
+  }
+
   /**
    * Generates a flashcard suggestion using AI based on the provided input text.
    * Currently using a mock implementation for development.
@@ -12,26 +16,26 @@ export class AIService {
    * @returns A promise that resolves to the generated flashcard suggestion
    * @throws Error if the operation times out
    */
-  static async generateFlashcard(input_text: string): Promise<GenerateFlashcardResponseDTO> {
-    // Create a timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("AI operation timed out")), AI_TIMEOUT_MS);
+  async generateFlashcard(input_text: string): Promise<GenerateFlashcardResponseDTO> {
+    const response = await this.openRouterService.sendChatCompletion({
+      systemMessage:
+        "You are a helpful AI assistant that creates flashcards. Create a concise and clear flashcard based on the provided text. The response must be a valid JSON object with 'front' (question or concept) and 'back' (answer or explanation) fields. Keep the front short and focused, and the back clear and informative.",
+      userMessage: input_text,
+      responseFormat: {
+        type: "json_object",
+      },
     });
 
-    // Create the AI operation promise
-    const aiPromise = new Promise<GenerateFlashcardResponseDTO>((resolve) => {
-      setTimeout(() => {
-        resolve({
-          suggested_flashcard: {
-            front: `Question about: ${input_text.slice(0, 50)}...`,
-            back: `AI generated answer for: ${input_text.slice(0, 50)}...`,
-            suggested_card_origin: "ai",
-          },
-        });
-      }, 500);
-    });
+    // Parse the JSON response
+    const flashcard = JSON.parse(response.response);
 
-    // Race between timeout and AI operation
-    return Promise.race([aiPromise, timeoutPromise]);
+    // Return in the expected format
+    return {
+      suggested_flashcard: {
+        front: flashcard.front,
+        back: flashcard.back,
+        suggested_card_origin: "ai",
+      },
+    };
   }
 }

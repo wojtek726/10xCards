@@ -1,12 +1,15 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import type { GenerateFlashcardRequestDTO, GenerateFlashcardResponseDTO } from "../../../types";
 import { AIService } from "../../../lib/services/ai.service";
+import { OpenRouterError } from "../../../types";
 
 // Schema for request validation
 const generateFlashcardSchema = z.object({
   input_text: z.string().min(1, "Input text is required").max(1000, "Input text is too long"),
 });
+
+// Create a singleton instance of AIService
+const aiService = new AIService();
 
 // Disable prerendering for dynamic API route
 export const prerender = false;
@@ -39,18 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 3. Parse request body
-    let body;
-    try {
-      body = await request.json();
-    } catch (error) {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid JSON",
-          message: "Request body must be valid JSON",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    const body = await request.json();
 
     // 4. Validate request data
     const validationResult = generateFlashcardSchema.safeParse(body);
@@ -67,17 +59,28 @@ export const POST: APIRoute = async ({ request }) => {
     // 5. Generate flashcard using AI service
     const { input_text } = validationResult.data;
     try {
-      const response = await AIService.generateFlashcard(input_text);
+      const response = await aiService.generateFlashcard(input_text);
       return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
     } catch (error) {
-      if (error instanceof Error && error.message === "AI operation timed out") {
-        return new Response(
-          JSON.stringify({
-            error: "Gateway Timeout",
-            message: "AI service took too long to respond",
-          }),
-          { status: 504, headers: { "Content-Type": "application/json" } }
-        );
+      if (error instanceof OpenRouterError) {
+        if (error.statusCode === 429) {
+          return new Response(
+            JSON.stringify({
+              error: "Rate limit exceeded",
+              message: "Too many requests. Please try again later.",
+            }),
+            { status: 429, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        if (error.statusCode === 504 || error.code === "TIMEOUT_ERROR") {
+          return new Response(
+            JSON.stringify({
+              error: "Gateway Timeout",
+              message: "AI service took too long to respond. Please try again.",
+            }),
+            { status: 504, headers: { "Content-Type": "application/json" } }
+          );
+        }
       }
       throw error; // Re-throw other errors to be caught by global handler
     }

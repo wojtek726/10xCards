@@ -155,3 +155,79 @@ export interface GenerateFlashcardResponseDTO {
 export interface GenericSuccessResponseDTO {
   success: true;
 }
+
+export interface ModelParameters {
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+}
+
+export interface ChatInput {
+  systemMessage: string;
+  userMessage: string;
+  responseFormat?: ResponseFormat;
+}
+
+export interface ResponseFormat {
+  type: "json_object";
+}
+
+export interface ChatResponse {
+  response: string;
+  model: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export interface RequestPayload {
+  messages: {
+    role: "system" | "user";
+    content: string;
+  }[];
+  model: string;
+  response_format?: ResponseFormat;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+}
+
+export enum OpenRouterErrorCode {
+  NETWORK_ERROR = "NETWORK_ERROR",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  AUTH_ERROR = "AUTH_ERROR",
+  RATE_LIMIT_ERROR = "RATE_LIMIT_ERROR",
+  SERVER_ERROR = "SERVER_ERROR",
+  TIMEOUT_ERROR = "TIMEOUT_ERROR",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+}
+
+export class OpenRouterError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode?: number,
+    public readonly code?: OpenRouterErrorCode | string,
+    public readonly retryable = false
+  ) {
+    super(message);
+    this.name = "OpenRouterError";
+  }
+
+  static isRetryableError(error: Error): boolean {
+    if (error instanceof OpenRouterError) {
+      if (error.retryable) return true;
+      if (error.statusCode) {
+        // Retry on 429 (rate limit), 503 (service unavailable), and 504 (gateway timeout)
+        return [429, 503, 504].includes(error.statusCode);
+      }
+    }
+    // Network errors are generally retryable
+    return error.message.toLowerCase().includes("network") || error.message.toLowerCase().includes("timeout");
+  }
+}

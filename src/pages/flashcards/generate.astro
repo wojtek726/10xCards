@@ -1,11 +1,11 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+import MainLayout from "@/layouts/MainLayout.astro";
 import { GenerowanieFiszkiView } from "@/components/flashcards/GenerowanieFiszkiView";
 ---
 
-<Layout title="Generowanie fiszek - 10xCards">
-  <main class="container mx-auto px-4 py-8">
+<MainLayout title="Generowanie fiszek">
+  <div class="container mx-auto px-4 py-8">
     <h1 class="mb-8 text-3xl font-bold">Generowanie fiszek</h1>
     <GenerowanieFiszkiView client:load />
-  </main>
-</Layout>
+  </div>
+</MainLayout>

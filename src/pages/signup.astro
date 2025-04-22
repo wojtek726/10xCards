@@ -1,0 +1,15 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import SignUpForm from "../components/auth/SignUpForm";
+---
+
+<MainLayout title="Rejestracja">
+  <div class="container mx-auto max-w-md py-8">
+    <h1 class="text-2xl font-bold mb-6">Utwórz konto</h1>
+    <SignUpForm client:load />
+    <p class="mt-4 text-center text-sm text-gray-600">
+      Masz już konto?{" "}
+      <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">Zaloguj się</a>
+    </p>
+  </div>
+</MainLayout>

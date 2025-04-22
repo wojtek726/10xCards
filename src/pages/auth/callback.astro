@@ -1,0 +1,12 @@
+import { createSupabaseServerInstance } from '@/db/supabase.client';
+
+const supabase = createSupabaseServerInstance(Astro);
+const { searchParams } = new URL(Astro.request.url);
+const code = searchParams.get('code');
+
+if (code) {
+  await supabase.auth.exchangeCodeForSession(code);
+}
+
+// Przekierowanie na stronę logowania z odpowiednim komunikatem
+return Astro.redirect('/login?verification=success'); 

@@ -1,49 +1,44 @@
-import { createClient } from "@supabase/supabase-js";
-import { createHash } from "crypto";
+import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
+import type { AstroCookies } from "astro";
+import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 
+// Pobieramy zmienne środowiskowe
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 
-const DEFAULT_USER = {
-  login: "default_user",
-  password: "default_password",
+// Tworzymy klienta tylko jeśli mamy wszystkie potrzebne dane
+export const supabaseClient = createBrowserClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+);
+
+export const cookieOptions: CookieOptionsWithName = {
+  path: "/",
+  secure: true,
+  httpOnly: true,
+  sameSite: "lax",
 };
 
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
+  return cookieHeader.split(";").map((cookie) => {
+    const [name, ...rest] = cookie.trim().split("=");
+    return { name, value: rest.join("=") };
+  });
+}
 
-// Helper to hash passwords using MD5
-const hashPassword = (password: string): string => {
-  return createHash("md5").update(password).digest("hex");
-};
+export const createSupabaseServerInstance = (context: { request: Request; cookies: AstroCookies }) => {
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions,
+    cookies: {
+      getAll() {
+        return parseCookieHeader(context.request.headers.get("Cookie") ?? "");
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => context.cookies.set(name, value, options));
+      },
+    },
+  });
 
-// Ensure default user exists
-export const ensureDefaultUser = async () => {
-  const hashedPassword = hashPassword(DEFAULT_USER.password);
-
-  const { data: existingUser, error: searchError } = await supabaseClient
-    .from("users")
-    .select("id")
-    .eq("login", DEFAULT_USER.login)
-    .single();
-
-  if (searchError || !existingUser) {
-    const { data: newUser, error: createError } = await supabaseClient
-      .from("users")
-      .insert({
-        login: DEFAULT_USER.login,
-        hash_password: hashedPassword,
-      })
-      .select("id")
-      .single();
-
-    if (createError) {
-      console.error("Failed to create default user:", createError);
-      throw createError;
-    }
-
-    return newUser;
-  }
-
-  return existingUser;
+  return supabase;
 };

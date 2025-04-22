@@ -1,0 +1,32 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { ViewTransitions } from 'astro:transitions';
+
+// Get the user from locals (set by middleware)
+const { user } = Astro.locals;
+---
+
+<MainLayout title="Twoje fiszki">
+  <ViewTransitions />
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">Twoje fiszki</h1>
+        <a 
+          href="/flashcards/generate" 
+          class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Generuj nowe fiszki
+        </a>
+      </div>
+      
+      <div class="grid gap-6">
+        {/* Tu będzie lista kolekcji fiszek */}
+        <div class="text-center text-muted-foreground">
+          <p>Nie masz jeszcze żadnych fiszek.</p>
+          <p class="mt-2">Kliknij "Generuj nowe fiszki" aby stworzyć swoją pierwszą kolekcję!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout> 

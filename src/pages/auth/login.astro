@@ -1,0 +1,20 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import SignInForm from '../../components/auth/SignInForm';
+import { ViewTransitions } from 'astro:transitions';
+---
+
+<MainLayout title="Logowanie">
+  <ViewTransitions />
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-2xl font-bold mb-6 text-center">Logowanie</h1>
+      <SignInForm client:load />
+      <div class="mt-4 text-center">
+        <a href="/auth/signup" class="text-blue-600 hover:underline">Nie masz konta? Zarejestruj się</a>
+        <br />
+        <a href="/auth/reset-password" class="text-blue-600 hover:underline">Zapomniałeś hasła?</a>
+      </div>
+    </div>
+  </div>
+</MainLayout>

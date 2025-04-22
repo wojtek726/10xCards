@@ -1,9 +1,16 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
+import Navbar from '@/components/navigation/Navbar';
+import type { User } from '@supabase/supabase-js';
+
 interface Props {
   title: string;
 }
 
 const { title } = Astro.props;
+const user = Astro.locals.user as User | null;
+
+import "../styles/globals.css";
 ---
 
 <!doctype html>
@@ -11,31 +18,22 @@ const { title } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} | AI Flashcards</title>
+    <title>{title} | 10x Cards</title>
+    <ViewTransitions />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <div class="relative flex min-h-screen flex-col">
-      <header
-        class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      >
-        <div class="container flex h-14 items-center">
-          <a href="/" class="mr-6 flex items-center space-x-2">
-            <span class="font-bold">AI Flashcards</span>
-          </a>
-          <nav class="flex items-center space-x-6 text-sm font-medium">
-            <a href="/flashcards" class="transition-colors hover:text-foreground/80"> Moje fiszki </a>
-            <a href="/flashcards/generate" class="transition-colors hover:text-foreground/80"> Generuj fiszki </a>
-          </nav>
-        </div>
-      </header>
-
-      <slot />
+      <Navbar client:load user={user} />
+      
+      <main class="flex-1">
+        <slot />
+      </main>
 
       <footer class="border-t py-6 md:py-0">
         <div class="container flex flex-col items-center justify-between gap-4 md:h-14 md:flex-row">
           <p class="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} AI Flashcards. Wszystkie prawa zastrzeżone.
+            &copy; {new Date().getFullYear()} 10x Cards. Wszystkie prawa zastrzeżone.
           </p>
         </div>
       </footer>

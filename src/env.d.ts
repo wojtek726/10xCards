@@ -1,12 +1,14 @@
 /// <reference types="astro/client" />
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 declare global {
   namespace App {
     interface Locals {
       supabase: SupabaseClient<Database>;
+      user?: User;
     }
   }
 }
@@ -20,4 +22,15 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+// Rozszerzenie interfejsu Astro.locals o informacje o użytkowniku
+declare namespace App {
+  interface Locals {
+    user?: {
+      id: string;
+      email: string;
+      login: string;
+    };
+  }
 }

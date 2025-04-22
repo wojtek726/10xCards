@@ -1,82 +1,81 @@
-import { describe, expect, it, beforeEach } from "@jest/globals";
-import { config } from "dotenv";
-import { OpenRouterService } from "../openrouter.service";
-import type { ChatInput } from "../../../types";
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { OpenRouterService } from '../openrouter.service';
+import type { ChatInput } from '../../../types';
 
-// Załaduj zmienne środowiskowe z .env
-config();
+// Mock the environment variable
+vi.stubEnv('OPENROUTER_API_KEY', 'test-api-key');
 
-// Deklaracja typów dla import.meta.env w środowisku testowym
-declare global {
-  var import: {
-    meta: {
-      env: {
-        OPENROUTER_API_KEY: string | undefined;
-      };
-    };
-  };
-}
-
-// Mock import.meta.env
-global.import = {
-  meta: {
-    env: {
-      OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-    },
-  },
+// Mock the fetch function
+const mockFetchResponse = {
+  ok: true,
+  json: vi.fn().mockResolvedValue({
+    choices: [
+      {
+        message: {
+          content: JSON.stringify({
+            front: "What are TypeScript interfaces?",
+            back: "TypeScript interfaces define the structure of objects, enforcing a specific shape and type checking."
+          })
+        }
+      }
+    ],
+    model: "openai/gpt-4",
+    usage: {
+      prompt_tokens: 50,
+      completion_tokens: 50,
+      total_tokens: 100
+    }
+  }),
+  text: vi.fn().mockResolvedValue(""),
+  status: 200,
+  statusText: "OK"
 };
 
-describe("OpenRouterService", () => {
+// Setup fetch mock
+vi.mock('undici', () => ({
+  fetch: vi.fn(() => Promise.resolve(mockFetchResponse)),
+  Response: globalThis.Response
+}));
+
+describe('OpenRouterService', () => {
   let service: OpenRouterService;
-
+  
   beforeEach(() => {
-    // Upewnij się, że mamy ustawioną zmienną środowiskową OPENROUTER_API_KEY
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY environment variable is required for tests");
-    }
-    service = new OpenRouterService(process.env.OPENROUTER_API_KEY);
+    // Create a new instance for each test
+    service = new OpenRouterService('test-api-key');
+    
+    // Reset the mocks
+    vi.mocked(mockFetchResponse.json).mockClear();
+    vi.mocked(mockFetchResponse.text).mockClear();
   });
-
-  it("should generate a flashcard suggestion", async () => {
+  
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+  
+  it('should send a chat completion request and parse the response', async () => {
+    // Arrange
     const input: ChatInput = {
-      systemMessage:
-        'You are a helpful AI assistant that creates flashcards. Always provide concise and clear content. Response must be a valid JSON object with "front" and "back" fields.',
-      userMessage: "Create a flashcard about TypeScript interfaces.",
+      systemMessage: 'You are a helpful assistant that creates flashcards.',
+      userMessage: 'Create a flashcard about TypeScript interfaces.',
       responseFormat: {
-        type: "json_object",
-      },
+        type: 'json_object'
+      }
     };
-
-    const response = await service.sendChatCompletion(input);
-    console.log("API Response:", response);
-
-    // Podstawowe sprawdzenia odpowiedzi
-    expect(response).toBeDefined();
-    expect(response.response).toBeDefined();
-    expect(response.model).toBeDefined();
-    expect(response.usage).toBeDefined();
-    expect(response.usage.total_tokens).toBeGreaterThan(0);
-
-    // Sprawdź, czy odpowiedź jest poprawnym JSON zgodnym ze schematem
-    let parsedResponse: { front: string; back: string } | undefined;
-    expect(() => {
-      const parsed = JSON.parse(response.response);
-      if (typeof parsed !== "object" || parsed === null) {
-        throw new Error("Response is not an object");
-      }
-      if (!("front" in parsed) || !("back" in parsed)) {
-        throw new Error("Response missing required fields");
-      }
-      if (typeof parsed.front !== "string" || typeof parsed.back !== "string") {
-        throw new Error("Response fields have incorrect types");
-      }
-      parsedResponse = parsed;
-    }).not.toThrow();
-
-    // Po walidacji wiemy, że parsedResponse jest zdefiniowane
-    expect(parsedResponse).toBeDefined();
-    const validatedResponse = parsedResponse as { front: string; back: string };
-    expect(validatedResponse.front.length).toBeGreaterThan(0);
-    expect(validatedResponse.back.length).toBeGreaterThan(0);
-  }, 30000); // Zwiększamy timeout do 30 sekund
-});
+    
+    // Act
+    const result = await service.sendChatCompletion(input);
+    
+    // Assert
+    expect(result).toBeDefined();
+    expect(result.response).toBeDefined();
+    expect(result.model).toBe('openai/gpt-4');
+    expect(result.usage.total_tokens).toBe(100);
+    
+    // Parse the response to ensure it's a valid JSON
+    const parsedResponse = JSON.parse(result.response);
+    expect(parsedResponse).toHaveProperty('front');
+    expect(parsedResponse).toHaveProperty('back');
+    expect(parsedResponse.front).toBe('What are TypeScript interfaces?');
+  });
+}); 

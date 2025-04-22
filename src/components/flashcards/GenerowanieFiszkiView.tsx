@@ -52,16 +52,18 @@ export const GenerowanieFiszkiView = () => {
       setLoading(true);
       setError(null);
 
+      const requestData = {
+        front: suggestion.front,
+        back: suggestion.back,
+        card_origin: "ai",
+      };
+      
       const response = await fetch("/api/flashcards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          front: suggestion.front,
-          back: suggestion.back,
-          card_origin: "ai",
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {

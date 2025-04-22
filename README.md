@@ -17,6 +17,13 @@
 **AI Integration:**
 - Openrouter.ai (integration with multiple AI models, such as OpenAI, Anthropic, Google, etc.)
 
+**Testing Framework:**
+- Vitest - Unit and integration testing
+- Playwright - End-to-end testing
+- React Testing Library - Component testing
+- MSW (Mock Service Worker) - API mocking
+- Lighthouse - Performance testing
+
 **CI/CD & Hosting:**
 - GitHub Actions
 - DigitalOcean (Docker based hosting)
@@ -52,6 +59,36 @@
 - `npm run lint` – Lint the project.
 - `npm run lint:fix` – Automatically fix lint errors.
 - `npm run format` – Format code using Prettier.
+- `npm run test` – Run unit and integration tests with Vitest.
+- `npm run test:watch` – Run tests in watch mode.
+- `npm run test:ui` – Run tests with Vitest UI.
+- `npm run test:coverage` – Generate test coverage report.
+- `npm run test:e2e` – Run end-to-end tests with Playwright.
+- `npm run test:e2e:ui` – Run Playwright tests with UI.
+- `npm run test:e2e:debug` – Debug Playwright tests.
+
+## Testing Framework
+
+### Unit Testing with Vitest
+We use Vitest for unit and integration testing. Tests are located in the same directory as the code they test, with the `.test.ts` or `.test.tsx` extension.
+
+Key features:
+- Fast test execution with watch mode
+- UI interface for test exploration
+- Coverage reporting
+- Compatible with Jest API
+
+### E2E Testing with Playwright
+End-to-end tests use Playwright and follow the Page Object Model pattern. Tests are located in the `e2e` directory.
+
+Key features:
+- Single browser testing (Chromium)
+- Screenshot testing
+- Trace viewer for debugging
+- Page Object Model for maintainable tests
+- Parallel test execution
+
+Both testing frameworks follow the Arrange-Act-Assert pattern for clear and readable tests.
 
 ## Project Scope
 - **User Management:** Securely register, log in, change password, and delete account.

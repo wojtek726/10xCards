@@ -26,10 +26,10 @@ export const FlashcardSuggestionCard = ({ suggestion, onAccept, onReject, disabl
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-4">
-        <Button variant="outline" onClick={onReject} disabled={disabled}>
+        <Button variant="outline" onClick={onReject} disabled={disabled} type="button">
           Odrzuć
         </Button>
-        <Button onClick={onAccept} disabled={disabled}>
+        <Button onClick={onAccept} disabled={disabled} type="button">
           Akceptuj
         </Button>
       </CardFooter>

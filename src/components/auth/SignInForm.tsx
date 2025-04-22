@@ -46,10 +46,13 @@ export default function SignInForm() {
 
     // Get redirect URL from query parameters
     const params = new URLSearchParams(window.location.search);
-    const redirectTo = params.get('redirectTo');
+    const redirectTo = params.get('redirectTo') || '/flashcards';
     
-    // Redirect to the requested page or flashcards/generate as default
-    window.location.href = redirectTo ? decodeURIComponent(redirectTo) : '/flashcards/generate';
+    // Wait for cookies to be set
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Force page reload to ensure new session is loaded
+    window.location.replace(redirectTo);
   };
 
   return (

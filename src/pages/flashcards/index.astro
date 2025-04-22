@@ -1,9 +1,22 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
+import { FlashcardService } from '../../lib/services/flashcard.service';
+import { createSupabaseServerInstance } from '../../db/supabase.client';
 
 // Get the user from locals (set by middleware)
 const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect('/auth/login');
+}
+
+// Initialize Supabase client and service
+const supabase = createSupabaseServerInstance({ request: Astro.request, cookies: Astro.cookies });
+const flashcardService = new FlashcardService(supabase);
+
+// Fetch flashcards
+const { flashcards, pagination } = await flashcardService.getFlashcards(user.id);
 ---
 
 <MainLayout title="Twoje fiszki">
@@ -15,17 +28,37 @@ const { user } = Astro.locals;
         <a 
           href="/flashcards/generate" 
           class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          data-test-id="generate-new-flashcards-button"
         >
           Generuj nowe fiszki
         </a>
       </div>
       
       <div class="grid gap-6">
-        {/* Tu będzie lista kolekcji fiszek */}
-        <div class="text-center text-muted-foreground">
-          <p>Nie masz jeszcze żadnych fiszek.</p>
-          <p class="mt-2">Kliknij "Generuj nowe fiszki" aby stworzyć swoją pierwszą kolekcję!</p>
-        </div>
+        {flashcards.length === 0 ? (
+          <div class="text-center text-muted-foreground">
+            <p>Nie masz jeszcze żadnych fiszek.</p>
+            <p class="mt-2">Kliknij "Generuj nowe fiszki" aby stworzyć swoją pierwszą kolekcję!</p>
+          </div>
+        ) : (
+          <div class="grid gap-4">
+            {flashcards.map((flashcard) => (
+              <div class="p-6 bg-card rounded-lg shadow-sm border">
+                <div class="mb-4">
+                  <h3 class="font-semibold text-lg mb-2">Przód</h3>
+                  <p class="text-muted-foreground">{flashcard.front}</p>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-lg mb-2">Tył</h3>
+                  <p class="text-muted-foreground">{flashcard.back}</p>
+                </div>
+                <div class="mt-4 text-sm text-muted-foreground">
+                  Utworzono: {new Date(flashcard.created_at).toLocaleDateString('pl-PL')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   </div>

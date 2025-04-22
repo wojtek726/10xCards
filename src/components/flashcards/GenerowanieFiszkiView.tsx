@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GenerateFlashcardRequestDTO, GenerateFlashcardResponseDTO } from "@/types";
+import type { GenerateFlashcardRequestDTO, GenerateFlashcardResponseDTO, CardOrigin } from "@/types";
 import { InputForm } from "./InputForm";
 import { FlashcardSuggestionCard } from "./FlashcardSuggestionCard";
 import { InlineError } from "@/components/ui/inline-error";
@@ -10,6 +10,11 @@ export const GenerowanieFiszkiView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<GenerateFlashcardResponseDTO["suggested_flashcard"] | null>(null);
+
+  const handleAuthError = () => {
+    const currentPath = window.location.pathname;
+    window.location.href = `/auth/login?redirectTo=${encodeURIComponent(currentPath)}`;
+  };
 
   const handleGenerateFlashcard = async (text: string) => {
     try {
@@ -29,7 +34,8 @@ export const GenerowanieFiszkiView = () => {
         if (response.status === 400) {
           throw new Error("Nieprawidłowe dane wejściowe. Tekst musi mieć od 1 do 1000 znaków.");
         } else if (response.status === 401) {
-          throw new Error("Brak autoryzacji. Zaloguj się ponownie.");
+          handleAuthError();
+          return;
         } else if (response.status === 504) {
           throw new Error("Przekroczono czas oczekiwania na odpowiedź. Spróbuj ponownie.");
         }
@@ -55,7 +61,7 @@ export const GenerowanieFiszkiView = () => {
       const requestData = {
         front: suggestion.front,
         back: suggestion.back,
-        card_origin: "ai",
+        card_origin: "ai" as CardOrigin,
       };
       
       const response = await fetch("/api/flashcards", {
@@ -67,6 +73,14 @@ export const GenerowanieFiszkiView = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          handleAuthError();
+          return;
+        }
+        if (response.status === 400) {
+          const errorData = await response.json();
+          throw new Error(errorData.error + (errorData.details ? ": " + JSON.stringify(errorData.details) : ""));
+        }
         throw new Error("Nie udało się zapisać fiszki. Spróbuj ponownie.");
       }
 
@@ -85,12 +99,12 @@ export const GenerowanieFiszkiView = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-test-id="flashcard-generation-view">
       <InputForm value={inputText} onChange={setInputText} onSubmit={handleGenerateFlashcard} disabled={loading} />
 
-      {loading && <Loader visible={true} />}
+      {loading && <Loader visible={true} data-test-id="generation-loader" />}
 
-      {error && <InlineError message={error} />}
+      {error && <InlineError message={error} data-test-id="generation-error" />}
 
       {suggestion && (
         <FlashcardSuggestionCard
@@ -98,6 +112,7 @@ export const GenerowanieFiszkiView = () => {
           onAccept={handleAcceptFlashcard}
           onReject={handleRejectFlashcard}
           disabled={loading}
+          data-test-id="flashcard-suggestion"
         />
       )}
     </div>

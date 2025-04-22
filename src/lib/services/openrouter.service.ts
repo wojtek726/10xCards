@@ -49,7 +49,7 @@ export class OpenRouterService {
     this.defaultModelName = "openai/gpt-4";
     this.defaultModelParameters = {
       temperature: 0.7,
-      max_tokens: 150,
+      max_tokens: 1000,
       top_p: 0.95,
       frequency_penalty: 0,
       presence_penalty: 0,

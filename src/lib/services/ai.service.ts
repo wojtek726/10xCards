@@ -19,8 +19,8 @@ export class AIService {
     try {
       const response = await this.openRouterService.sendChatCompletion({
         systemMessage:
-          "You are a helpful AI assistant that creates flashcards. Create a concise and clear flashcard based on the provided text. The response must be a valid JSON object with 'front' (question or concept) and 'back' (answer or explanation) fields. Keep the front short and focused, and the back clear and informative. IMPORTANT: Make sure to escape any special characters in the JSON response and use '\\n' for line breaks. DO NOT use actual line breaks in the JSON. The response must be a single line of valid JSON.",
-        userMessage: input_text,
+          "You are a helpful AI assistant that creates flashcards. Create a concise and clear flashcard based on the provided text. The response must be a valid JSON object with 'front' (question or concept) and 'back' (answer or explanation) fields. IMPORTANT CONSTRAINTS: The front must be max 150 characters and the back must be max 450 characters. Keep the front as a clear, focused question, and the back as a concise but comprehensive answer. Use simple language and focus on the most important information. Break down complex concepts into simpler parts. IMPORTANT: Make sure to escape any special characters in the JSON response and use '\\n' for line breaks. DO NOT use actual line breaks in the JSON. The response must be a single line of valid JSON. DO NOT include any explanations or additional text outside the JSON object.",
+        userMessage: `Create a concise flashcard from this text. Keep the answer clear but brief (max 450 characters): ${input_text}`,
         responseFormat: {
           type: "json_object",
         },
@@ -41,28 +41,42 @@ export class AIService {
       let flashcard;
       try {
         flashcard = JSON.parse(jsonStr);
+        console.log("Parsed flashcard data:", flashcard);
       } catch (error) {
         console.error("Failed to parse JSON response:", jsonStr);
         throw new Error(`Invalid JSON response from AI: ${error instanceof Error ? error.message : 'Unknown parsing error'}`);
       }
 
-      // Validate the response structure
+      // Validate the response structure and length
       if (!flashcard.front || !flashcard.back) {
+        console.error("Invalid flashcard structure:", flashcard);
         throw new Error("AI response missing required fields (front/back)");
+      }
+
+      // Truncate content if it exceeds limits
+      if (flashcard.front.length > 150) {
+        console.warn("Front content too long, truncating...");
+        flashcard.front = flashcard.front.slice(0, 147) + "...";
+      }
+      if (flashcard.back.length > 450) {
+        console.warn("Back content too long, truncating...");
+        flashcard.back = flashcard.back.slice(0, 447) + "...";
       }
 
       // Convert escaped newlines back to actual newlines for display
       flashcard.front = flashcard.front.replace(/\\n/g, "\n");
       flashcard.back = flashcard.back.replace(/\\n/g, "\n");
 
-      // Return in the expected format
-      return {
+      const result: GenerateFlashcardResponseDTO = {
         suggested_flashcard: {
           front: flashcard.front,
           back: flashcard.back,
-          suggested_card_origin: "ai",
+          suggested_card_origin: "ai" as const,
         },
       };
+      
+      console.log("Final flashcard data:", result);
+      return result;
     } catch (error) {
       console.error("Error generating flashcard:", error);
       throw error;

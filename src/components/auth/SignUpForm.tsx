@@ -24,6 +24,7 @@ type SignUpFormData = z.infer<typeof signUpSchema>;
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -36,20 +37,33 @@ export default function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
-    const { data: authData, error: authError } = await AuthService.signUp(
-      data.email,
-      data.password
-    );
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    if (authError) {
-      setError(authError);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || "Wystąpił błąd podczas rejestracji");
+        return;
+      }
+
+      setSuccessMessage(result.message || "Konto zostało utworzone. Sprawdź swoją skrzynkę email.");
+    } catch (err) {
+      setError("Wystąpił nieoczekiwany błąd podczas rejestracji");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Przekierowanie na stronę logowania z informacją o potrzebie potwierdzenia emaila
-    window.location.href = "/login?verification=pending";
   };
 
   return (
@@ -60,6 +74,11 @@ export default function SignUpForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && <InlineError message={error} />}
+          {successMessage && (
+            <div className="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
+              {successMessage}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

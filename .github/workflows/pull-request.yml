@@ -4,6 +4,21 @@ on:
   pull_request:
     branches: [ main, develop ]
     types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Środowisko do testów'
+        required: true
+        default: 'integration'
+        type: choice
+        options:
+        - integration
+        - staging
+      debug_enabled:
+        description: 'Włącz tryb debug'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   lint:
@@ -53,12 +68,13 @@ jobs:
     name: E2E Tests
     needs: lint
     runs-on: ubuntu-latest
-    environment: integration
+    environment: ${{ github.event.inputs.environment || 'integration' }}
     
     env:
       PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
       PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DEBUG: ${{ github.event.inputs.debug_enabled == 'true' && 'pw:api' || '' }}
       
     steps:
       - uses: actions/checkout@v4

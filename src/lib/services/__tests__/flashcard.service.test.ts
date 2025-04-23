@@ -1,8 +1,22 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { FlashcardService } from '../flashcard.service';
 import type { FlashcardDTO } from '../../../types';
+
+// Mock for SupabaseClient to be passed to FlashcardService
+const mockSupabase = {
+  from: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+  delete: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  order: vi.fn().mockReturnThis(),
+  range: vi.fn().mockReturnThis(),
+  single: vi.fn().mockReturnThis(),
+  count: vi.fn().mockReturnThis()
+};
 
 // Sample flashcard data for testing
 const mockFlashcards: FlashcardDTO[] = [
@@ -52,37 +66,85 @@ describe('FlashcardService', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
   
   // Reset handlers between tests
-  afterEach(() => server.resetHandlers());
+  afterEach(() => {
+    server.resetHandlers();
+    vi.clearAllMocks();
+  });
   
   // Close server after all tests
   afterAll(() => server.close());
   
   beforeEach(() => {
-    // Create a new service instance for each test
-    service = new FlashcardService();
+    // Reset the mocks for Supabase client
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.insert.mockReturnThis();
+    mockSupabase.update.mockReturnThis();
+    mockSupabase.delete.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.order.mockReturnThis();
+    mockSupabase.range.mockReturnThis();
+    mockSupabase.single.mockReturnThis();
+    
+    // Mock console.error for error tests
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Create a new service instance with mocked supabase client
+    service = new FlashcardService(mockSupabase as any);
   });
   
   it('should fetch flashcards', async () => {
+    // Mock Supabase response for count query
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.count = vi.fn().mockResolvedValue({ count: 2, error: null });
+    
+    // Mock Supabase response for main query
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.order.mockReturnThis();
+    mockSupabase.range.mockResolvedValue({
+      data: mockFlashcards,
+      error: null
+    });
+    
     // Act
-    const flashcards = await service.getFlashcards();
+    const result = await service.getFlashcards("test-user");
     
     // Assert
-    expect(flashcards).toHaveLength(2);
-    expect(flashcards[0].id).toBe('1');
-    expect(flashcards[0].front).toBe('What is TypeScript?');
-    expect(flashcards[1].id).toBe('2');
-    expect(flashcards[1].front).toBe('What is React?');
+    expect(result.flashcards).toHaveLength(2);
+    expect(result.flashcards[0].id).toBe('1');
+    expect(result.flashcards[0].front).toBe('What is TypeScript?');
+    expect(result.flashcards[1].id).toBe('2');
+    expect(result.flashcards[1].front).toBe('What is React?');
   });
   
   it('should create a new flashcard', async () => {
     // Arrange
     const newFlashcard = {
       front: 'What is Vitest?',
-      back: 'Vitest is a Vite-native testing framework for JavaScript.'
+      back: 'Vitest is a Vite-native testing framework for JavaScript.',
+      card_origin: 'manual' as const
     };
     
+    // Mock Supabase response
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.insert.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.single.mockResolvedValue({
+      data: {
+        id: '3',
+        ...newFlashcard,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      error: null
+    });
+    
     // Act
-    const createdFlashcard = await service.createFlashcard(newFlashcard);
+    const createdFlashcard = await service.createFlashcard("test-user", newFlashcard);
     
     // Assert
     expect(createdFlashcard).toBeDefined();
@@ -93,17 +155,25 @@ describe('FlashcardService', () => {
   });
   
   it('should handle API errors when fetching flashcards', async () => {
-    // Arrange - Override the handler to return an error
-    server.use(
-      http.get('/api/flashcards', () => {
-        return new HttpResponse(null, { 
-          status: 500,
-          statusText: 'Internal Server Error'
-        });
-      })
-    );
+    // Arrange - testujemy najprostszy przypadek błędu przy pobieraniu fiszek
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.order.mockReturnThis();
+    mockSupabase.range.mockResolvedValue({
+      data: null,
+      error: { message: 'Database error', code: '500' }
+    });
     
-    // Act & Assert
-    await expect(service.getFlashcards()).rejects.toThrow('Failed to fetch flashcards: 500 Internal Server Error');
+    // Act
+    const result = await service.getFlashcards("test-user");
+    
+    // Assert - service handles errors by returning empty data instead of throwing
+    expect(result.flashcards).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+    expect(console.error).toHaveBeenCalledWith(
+      "Error fetching flashcards:",
+      expect.objectContaining({ message: "Failed to fetch flashcards: Database error" })
+    );
   });
 }); 

@@ -99,12 +99,12 @@ export const GenerowanieFiszkiView = () => {
   };
 
   return (
-    <div className="space-y-6" data-test-id="flashcard-generation-view">
+    <div className="space-y-6" data-testid="flashcard-generation-view">
       <InputForm value={inputText} onChange={setInputText} onSubmit={handleGenerateFlashcard} disabled={loading} />
 
-      {loading && <Loader visible={true} data-test-id="generation-loader" />}
+      {loading && <Loader visible={true} data-testid="generation-loader" />}
 
-      {error && <InlineError message={error} data-test-id="generation-error" />}
+      {error && <InlineError message={error} data-testid="generation-error" />}
 
       {suggestion && (
         <FlashcardSuggestionCard
@@ -112,7 +112,7 @@ export const GenerowanieFiszkiView = () => {
           onAccept={handleAcceptFlashcard}
           onReject={handleRejectFlashcard}
           disabled={loading}
-          data-test-id="flashcard-suggestion"
+          data-testid="flashcard-suggestion"
         />
       )}
     </div>

@@ -72,7 +72,7 @@ export default function SignUpForm() {
         <CardTitle className="text-2xl font-bold text-center">Rejestracja</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="register-form">
           {error && <InlineError message={error} />}
           {successMessage && (
             <div className="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
@@ -89,6 +89,7 @@ export default function SignUpForm() {
               disabled={isLoading} 
               aria-invalid={!!errors.email}
               placeholder="twoj@email.com"
+              data-testid="email-input"
             />
             {errors.email && <InlineError message={errors.email.message!} />}
           </div>
@@ -102,6 +103,7 @@ export default function SignUpForm() {
               disabled={isLoading}
               aria-invalid={!!errors.password}
               placeholder="Minimum 8 znaków"
+              data-testid="password-input"
             />
             {errors.password && <InlineError message={errors.password.message!} />}
           </div>
@@ -115,11 +117,12 @@ export default function SignUpForm() {
               disabled={isLoading}
               aria-invalid={!!errors.confirmPassword}
               placeholder="Powtórz hasło"
+              data-testid="confirm-password-input"
             />
             {errors.confirmPassword && <InlineError message={errors.confirmPassword.message!} />}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="submit-button">
             {isLoading ? (
               <>
                 <Loader className="mr-2" />

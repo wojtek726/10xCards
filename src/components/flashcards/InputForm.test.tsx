@@ -52,7 +52,7 @@ describe('InputForm', () => {
     render(<InputForm {...mockProps} value="Test input " />);
 
     // Need to simulate a complete form submission with a valid form
-    const form = screen.getByTestId('input-form');
+    const form = screen.getByTestId('flashcard-generation-form');
     
     // Override form's onSubmit to directly call the handler
     const handleSubmit = vi.fn((e) => {
@@ -75,7 +75,7 @@ describe('InputForm', () => {
     const { rerender } = render(<InputForm {...mockProps} value="" />);
 
     // Test with empty string
-    const form = screen.getByTestId('input-form');
+    const form = screen.getByTestId('flashcard-generation-form');
     fireEvent.submit(form);
     expect(mockProps.onSubmit).not.toHaveBeenCalled();
 

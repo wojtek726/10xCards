@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import LoginForm from '../../components/auth/LoginForm';
+import SignInForm from '../../components/auth/SignInForm';
 import { ViewTransitions } from 'astro:transitions';
 
 // Redirect if user is already logged in
@@ -64,7 +64,7 @@ if (user && !isLogout) {
   <ViewTransitions />
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-md mx-auto">
-      <LoginForm client:load />
+      <SignInForm client:load />
       <div class="mt-4 text-center">
         <a href="/auth/signup" class="text-blue-600 hover:underline">Nie masz konta? Zarejestruj się</a>
       </div>

@@ -6,7 +6,7 @@ import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 // Pobieramy zmienne środowiskowe
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
-const supabaseServiceRoleKey = import.meta.env.SUPABASE_KEY;
+const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 const siteUrl = import.meta.env.SITE_URL || 'http://localhost:3000'; // Domyślnie do 3000 zgodnie z konfiguracją
 
 // Sprawdź, czy jesteśmy w środowisku developerskim (localhost)

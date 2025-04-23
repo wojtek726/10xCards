@@ -51,7 +51,11 @@ export const InputForm = ({ value, onChange, onSubmit, disabled }: InputFormProp
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" data-test-id="flashcard-generation-form">
+      <form 
+        onSubmit={form.handleSubmit(handleSubmit)} 
+        className="space-y-4" 
+        data-testid="flashcard-generation-form"
+      >
         <FormField
           control={form.control}
           name="text"
@@ -63,7 +67,7 @@ export const InputForm = ({ value, onChange, onSubmit, disabled }: InputFormProp
                   placeholder="Wklej tutaj tekst, z którego chcesz wygenerować fiszkę..."
                   className="min-h-[200px]"
                   disabled={disabled}
-                  data-test-id="flashcard-generation-input"
+                  data-testid="flashcard-generation-input"
                   aria-describedby="input-description"
                   required
                   minLength={1}
@@ -84,7 +88,7 @@ export const InputForm = ({ value, onChange, onSubmit, disabled }: InputFormProp
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={disabled || !localValue.trim()} data-test-id="generate-flashcard-button">
+        <Button type="submit" disabled={disabled || !localValue.trim()} data-testid="generate-flashcard-button">
           Generuj fiszkę
         </Button>
       </form>

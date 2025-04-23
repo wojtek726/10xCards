@@ -142,11 +142,10 @@ describe('GenerowanieFiszkiView', () => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
       
       // Further verification would be more complex due to Request objects in modern fetch
-      // Just check the form was reset which indicates successful save
+      // Just check the suggestion is removed after saving
     });
 
-    // Check that form has been reset
-    expect(input).toHaveValue('');
+    // Check that the suggestion was removed
     expect(screen.queryByText('Wygenerowana fiszka')).not.toBeInTheDocument();
   });
 

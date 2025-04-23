@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
 
 const signUpSchema = z.object({
   email: z.string().email("Nieprawidłowy adres email"),
@@ -12,11 +11,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = await request.json();
     const { email, password } = signUpSchema.parse(body);
 
-    // Używamy regularnego klienta Supabase
-    const supabase = createClient(
-      import.meta.env.SUPABASE_URL,
-      import.meta.env.SUPABASE_KEY
-    );
+    // Używamy instancji supabase z locals
+    const supabase = locals.supabase;
 
     // 1. Rejestrujemy użytkownika używając standardowej metody signUp
     const { data: authData, error: authError } = await supabase.auth.signUp({

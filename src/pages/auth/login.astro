@@ -2,6 +2,7 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import SignInForm from '../../components/auth/SignInForm';
 import { ViewTransitions } from 'astro:transitions';
+import { logger } from '../../lib/services/logger.service';
 
 // Redirect if user is already logged in
 const { user, supabase } = Astro.locals;
@@ -31,31 +32,31 @@ const accessToken = Astro.cookies.get('sb-access-token');
 const refreshToken = Astro.cookies.get('sb-refresh-token');
 const supabaseAuthToken = Astro.cookies.get('supabase-auth-token');
 
-console.log('Login page loaded, checking cookies:');
-console.log('- Has user in locals:', !!user);
-console.log('- Has access token cookie:', !!accessToken);
-console.log('- Has refresh token cookie:', !!refreshToken);
-console.log('- Has supabase auth token cookie:', !!supabaseAuthToken);
-console.log('- All cookies:', Astro.request.headers.get('cookie'));
+logger.debug('Login page loaded, checking cookies:');
+logger.debug('- Has user in locals:', !!user);
+logger.debug('- Has access token cookie:', !!accessToken);
+logger.debug('- Has refresh token cookie:', !!refreshToken);
+logger.debug('- Has supabase auth token cookie:', !!supabaseAuthToken);
+logger.debug('- All cookies:', Astro.request.headers.get('cookie'));
 
 // Jeśli mamy tokeny, sprawdźmy czy sesja jest ważna
 if (accessToken && refreshToken && supabase && !isLogout) {
   try {
     const { data, error } = await supabase.auth.getUser();
-    console.log('Supabase getUser result:', { hasUser: !!data.user, error });
+    logger.debug('Supabase getUser result:', { hasUser: !!data.user, error });
     
     if (data.user) {
-      console.log('Valid user detected, redirecting to /flashcards');
+      logger.debug('Valid user detected, redirecting to /flashcards');
       return Astro.redirect('/flashcards');
     }
   } catch (err) {
-    console.error('Error checking user session:', err);
+    logger.error('Error checking user session:', err);
   }
 }
 
 // Sprawdzamy podstawowo czy użytkownik jest zalogowany (z middleware)
 if (user && !isLogout) {
-  console.log('User in locals, redirecting to /flashcards');
+  logger.debug('User in locals, redirecting to /flashcards');
   return Astro.redirect('/flashcards');
 }
 ---
@@ -73,6 +74,8 @@ if (user && !isLogout) {
 </MainLayout>
 
 <script>
+  import { logger } from '../../lib/services/logger.service';
+
   // Funkcja pomocnicza do czyszczenia ciasteczek po stronie klienta
   function deleteAllCookies() {
     const cookies = document.cookie.split(";");
@@ -91,7 +94,7 @@ if (user && !isLogout) {
 
   // Sprawdź, czy strona została załadowana po wylogowaniu
   if (window.location.search.includes('logout')) {
-    console.log('Logout detected, clearing all cookies client-side');
+    logger.debug('Logout detected, clearing all cookies client-side');
     deleteAllCookies();
     // Usuń parametr logout z URL bez odświeżania strony
     window.history.replaceState({}, document.title, window.location.pathname);

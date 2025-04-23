@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
+import { logger } from '../../../lib/services/logger.service';
 
 const signUpSchema = z.object({
   email: z.string().email("Nieprawidłowy adres email"),
@@ -24,7 +25,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     if (authError) {
-      console.error("Supabase Auth Error:", authError);
+      logger.error("Supabase Auth Error:", authError);
       return new Response(
         JSON.stringify({
           error: "Błąd podczas rejestracji: " + authError.message,
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     if (dbError) {
-      console.error("Database Error:", dbError);
+      logger.error("Database Error:", dbError);
       
       // Jeśli błąd dotyczy duplikatu emaila
       if (dbError.code === "23505") {
@@ -78,7 +79,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       { status: 200 }
     );
   } catch (err) {
-    console.error("Błąd podczas rejestracji:", err);
+    logger.error("Błąd podczas rejestracji:", err);
     
     if (err instanceof z.ZodError) {
       return new Response(

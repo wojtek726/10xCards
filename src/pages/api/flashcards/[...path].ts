@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { FlashcardService } from "../../../lib/services/flashcard.service";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import { z } from "zod";
+import { logger } from '../../../lib/services/logger.service';
 
 // Schemat walidacji dla tworzenia fiszki
 const createFlashcardSchema = z.object({
@@ -62,7 +63,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const result = await flashcardService.getFlashcards(user.id, page, limit);
     return new Response(JSON.stringify(result));
   } catch (error) {
-    console.error("Error in GET /api/flashcards:", error);
+    logger.error("Error in GET /api/flashcards:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
@@ -88,16 +89,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await request.json();
-    console.log("Received flashcard data:", body);
+    logger.debug("Received flashcard data:", body);
     
     try {
       const validatedData = createFlashcardSchema.parse(body);
-      console.log("Validated flashcard data:", validatedData);
+      logger.debug("Validated flashcard data:", validatedData);
       
       const flashcard = await flashcardService.createFlashcard(user.id, validatedData);
       return new Response(JSON.stringify(flashcard), { status: 201 });
     } catch (validationError) {
-      console.error("Validation error details:", validationError);
+      logger.error("Validation error details:", validationError);
       if (validationError instanceof z.ZodError) {
         return new Response(
           JSON.stringify({ 
@@ -111,7 +112,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       throw validationError;
     }
   } catch (error) {
-    console.error("Error in POST /api/flashcards:", error);
+    logger.error("Error in POST /api/flashcards:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
@@ -163,7 +164,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    console.error("Error in PUT /api/flashcards:", error);
+    logger.error("Error in PUT /api/flashcards:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
@@ -201,7 +202,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     await flashcardService.deleteFlashcard(user.id, flashcardId);
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error("Error in DELETE /api/flashcards:", error);
+    logger.error("Error in DELETE /api/flashcards:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }

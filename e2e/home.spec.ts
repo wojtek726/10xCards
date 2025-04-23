@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { HomePage } from './page-objects/home-page';
-import { AuthPage } from './page-objects';
+import { HomePage as _HomePage } from './page-objects/home-page';
+import { AuthPage as _AuthPage } from './page-objects/AuthPage';
+import { mockAuthApi as _mockAuthApi } from './mocks/auth-api';
 
-test.describe('Home page', () => {
-  test('should load the home page successfully', async ({ page }) => {
+test.describe('Home Page', () => {
+  const testEmail = 'test@example.com';
+  const _testPassword = 'testPassword123';
+
+  test.beforeEach(async ({ page }) => {
     // Login first since home page requires authentication
-    const testEmail = `test-${Date.now()}@example.com`;
-    const testPassword = 'Test@123456';
-    
-    // Mock home page response
     await page.route('/', route => {
       if (route.request().resourceType() === 'document') {
         return route.fulfill({

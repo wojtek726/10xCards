@@ -1,8 +1,7 @@
-import { AuthError } from '@supabase/supabase-js';
 import { supabaseClient } from '@/db/supabase.client';
 import type { AuthResponse, SignInDTO, SignUpDTO } from '@/types';
 
-const ERROR_MESSAGES = {
+const _ERROR_MESSAGES = {
   'Invalid login credentials': 'Niepoprawny email lub hasło',
   'Email not confirmed': 'Email nie został potwierdzony',
   'Password is too short': 'Hasło jest za krótkie',

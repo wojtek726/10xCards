@@ -17,17 +17,21 @@ export default function SignInForm() {
       password: ""
     },
     onSubmit: async (data) => {
-      const response = await AuthService.signIn(data);
-      
-      // Get redirect URL from query parameters
-      const params = new URLSearchParams(window.location.search);
-      const redirectTo = params.get('redirectTo') || '/flashcards';
-      
-      // Wait for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Force page reload to ensure new session is loaded
-      window.location.replace(redirectTo);
+      try {
+        const _response = await AuthService.signIn(data);
+        
+        // Get redirect URL from query parameters
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('redirectTo') || '/flashcards';
+        
+        // Wait for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Force page reload to ensure new session is loaded
+        window.location.replace(redirectTo);
+      } catch (error) {
+        // ... existing code ...
+      }
     },
   });
 

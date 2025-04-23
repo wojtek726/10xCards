@@ -1,8 +1,8 @@
 import { createHash } from "crypto";
-import { supabaseClient } from "../../db/supabase.client";
+import { supabaseClient } from "@/db/supabase.client";
 import type { Database } from "../../db/database.types";
 
-type User = Database["public"]["Tables"]["users"]["Insert"];
+type _User = Database["public"]["Tables"]["users"]["Insert"];
 
 // Helper to hash passwords using MD5
 const hashPassword = (password: string): string => {

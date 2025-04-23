@@ -9,7 +9,7 @@ interface UseAuthFormOptions<T> {
   defaultValues?: DefaultValues<T>;
 }
 
-export const useAuthForm = <T extends Record<string, any>>({ 
+export const useAuthForm = <T extends Record<string, unknown>>({ 
   schema, 
   onSubmit,
   defaultValues 

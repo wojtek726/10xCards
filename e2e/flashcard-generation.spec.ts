@@ -9,7 +9,7 @@ test.describe('Flashcard Generation Flow', () => {
     // Arrange
     const listPage = new FlashcardsListPage(page);
     const generationPage = new FlashcardGenerationPage(page);
-    const testText = 'Test input text for flashcard generation';
+    const _testText = 'Test input text for flashcard generation';
 
     // Mock the flashcard generation API with delay
     await page.route('**/api/flashcards/generate', async route => {
@@ -52,7 +52,7 @@ test.describe('Flashcard Generation Flow', () => {
     await page.screenshot({ path: 'test-results/after-navigation-to-generate.png' });
     
     // Act - Generate flashcard
-    await generationPage.generateFlashcardWithText(testText);
+    await generationPage.generateFlashcardWithText(_testText);
     
     // Zrób zrzut ekranu po wysłaniu tekstu
     await page.screenshot({ path: 'test-results/after-text-input.png' });
@@ -104,7 +104,7 @@ test.describe('Flashcard Generation Flow', () => {
   test('should be able to reject a generated flashcard', async ({ page }) => {
     // Arrange
     const generationPage = new FlashcardGenerationPage(page);
-    const testText = 'Test input for rejection';
+    const _testText = 'Test input for rejection';
     
     // Mock the flashcard generation API with delay
     await page.route('**/api/flashcards/generate', async route => {

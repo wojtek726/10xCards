@@ -8,7 +8,7 @@ import * as path from 'path';
  * - Creates necessary directories for test artifacts
  * - Sets up any global state needed for tests
  */
-async function globalSetup(config: FullConfig): Promise<void> {
+export default async function globalSetup(_config: FullConfig): Promise<void> {
   // Create directories for test artifacts if they don't exist
   const testResultsDir = path.join(process.cwd(), 'test-results');
   const screenshotsDir = path.join(testResultsDir, 'screenshots');
@@ -33,6 +33,4 @@ async function globalSetup(config: FullConfig): Promise<void> {
   await browser.close();
   
   console.log('✅ Global setup complete');
-}
-
-export default globalSetup; 
+} 

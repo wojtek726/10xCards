@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { APIRoute } from "astro";
 import { AIService } from "../../../lib/services/ai.service";
 import { OpenRouterError } from "../../../types";
+import { logger } from '../../../lib/services/logger.service';
 
 // Schema for request validation
 const generateFlashcardSchema = z.object({
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
       throw error; // Re-throw other errors to be caught by global handler
     }
   } catch (error) {
-    console.error("Error generating flashcard:", error);
+    logger.error("Error generating flashcard:", error);
 
     return new Response(
       JSON.stringify({

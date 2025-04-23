@@ -2,6 +2,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
+import { logger } from '../lib/services/logger.service';
 
 // Pobieramy zmienne środowiskowe
 const supabaseUrl = import.meta.env.SUPABASE_URL;
@@ -12,9 +13,9 @@ const siteUrl = import.meta.env.SITE_URL || 'http://localhost:3000'; // Domyśln
 // Sprawdź, czy jesteśmy w środowisku developerskim (localhost)
 const isDevelopment = siteUrl.includes('localhost') || siteUrl.includes('127.0.0.1');
 
-console.log("Inicjalizacja Supabase z adresem URL:", supabaseUrl);
-console.log("Site URL:", siteUrl);
-console.log("Environment:", isDevelopment ? "Development" : "Production");
+logger.info("Inicjalizacja Supabase z adresem URL:", supabaseUrl);
+logger.info("Site URL:", siteUrl);
+logger.info("Environment:", isDevelopment ? "Development" : "Production");
 
 // Tworzymy klienta tylko jeśli mamy wszystkie potrzebne dane
 export const supabaseClient = createBrowserClient<Database>(
@@ -62,16 +63,16 @@ interface CreateSupabaseServerInstanceOptions {
 
 export const createSupabaseServerInstance = ({ request, cookies, useServiceRole = false }: CreateSupabaseServerInstanceOptions) => {
   const requestCookieHeader = request.headers.get("Cookie") || '';
-  console.log("Creating server instance with cookie header:", requestCookieHeader);
+  logger.debug("Creating server instance with cookie header:", requestCookieHeader);
   
   // Analizuj ciasteczka ręcznie
   const allCookies = getAllCookies(requestCookieHeader);
-  console.log("Parsed cookies:", allCookies);
+  logger.debug("Parsed cookies:", allCookies);
   
   const accessToken = allCookies[AUTH_COOKIE_NAMES.accessToken];
   const refreshToken = allCookies[AUTH_COOKIE_NAMES.refreshToken];
   
-  console.log("Found tokens in cookies:", {
+  logger.debug("Found tokens in cookies:", {
     hasAccessToken: !!accessToken,
     hasRefreshToken: !!refreshToken,
   });
@@ -86,9 +87,9 @@ export const createSupabaseServerInstance = ({ request, cookies, useServiceRole 
           return Object.entries(allCookies).map(([name, value]) => ({ name, value }));
         },
         setAll(cookiesToSet) {
-          console.log("Setting cookies:", cookiesToSet);
+          logger.debug("Setting cookies:", cookiesToSet);
           cookiesToSet.forEach(({ name, value, options }) => {
-            console.log(`Setting cookie ${name} with options:`, options);
+            logger.debug(`Setting cookie ${name} with options:`, options);
             cookies.set(name, value, options);
           });
         },
@@ -106,7 +107,12 @@ export const createSupabaseServerInstance = ({ request, cookies, useServiceRole 
 };
 
 // Funkcja do ustawiania ciasteczek uwzględniająca specyfikę localhost
-export const setSecureCookies = (cookies: AstroCookies, name: string, value: string, options: any = {}) => {
+export const setSecureCookies = (
+  cookies: AstroCookies, 
+  name: string, 
+  value: string, 
+  options: Partial<CookieOptionsWithName> = {}
+) => {
   // Zastosuj odpowiednie opcje dla środowiska localhost
   const cookieOpts = {
     ...cookieOptions, // Już zawiera secure: !isDevelopment
@@ -118,6 +124,6 @@ export const setSecureCookies = (cookies: AstroCookies, name: string, value: str
     cookieOpts.secure = false;
   }
   
-  console.log(`Setting cookie ${name} with value length: ${value.length}, secure: ${cookieOpts.secure}`);
+  logger.debug(`Setting cookie ${name} with value length: ${value.length}, secure: ${cookieOpts.secure}`);
   cookies.set(name, value, cookieOpts);
 };

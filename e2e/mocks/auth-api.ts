@@ -1,12 +1,12 @@
 import type { Page } from '@playwright/test';
 
 export async function mockAuthApi(page: Page) {
-  await page.route('**/api/auth/**', async (route) => {
-    const url = route.request().url();
-    const method = route.request().method();
+  await page.route('**/api/auth/**', async (route, request) => {
+    const url = request.url();
+    const _method = request.method();
     
     if (url.includes('/api/auth/login')) {
-      const body = route.request().postDataJSON();
+      const body = request.postDataJSON();
       if (body?.email === 'invalid@example.com') {
         await route.fulfill({
           status: 400,
@@ -49,7 +49,7 @@ export async function mockAuthApi(page: Page) {
       });
     }
     else if (url.includes('/api/auth/signup')) {
-      const body = route.request().postDataJSON();
+      const body = request.postDataJSON();
       await route.fulfill({
         status: 200,
         body: JSON.stringify({

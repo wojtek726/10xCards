@@ -1,7 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 
 // Cookie names from src/db/supabase.client.ts
-const AUTH_COOKIE_NAMES = {
+const _AUTH_COOKIE_NAMES = {
   accessToken: 'sb-access-token',
   refreshToken: 'sb-refresh-token',
   authCookie: 'supabase-auth-token'
@@ -27,7 +27,7 @@ const mockUserApiResponse = {
 };
 
 // Mock for session response
-const mockSessionResponse = {
+const _mockSessionResponse = {
   access_token: TEST_USER.access_token,
   refresh_token: TEST_USER.refresh_token,
   expires_in: 3600,

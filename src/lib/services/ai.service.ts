@@ -1,5 +1,6 @@
 import type { GenerateFlashcardResponseDTO } from "../../types";
 import { OpenRouterService } from "./openrouter.service";
+import { logger } from './logger.service';
 
 export class AIService {
   private readonly openRouterService: OpenRouterService;
@@ -35,31 +36,31 @@ export class AIService {
       // Replace any actual newlines with spaces to ensure valid JSON
       jsonStr = jsonStr.replace(/\n/g, " ");
       
-      console.log("Cleaned JSON string:", jsonStr);
+      logger.debug("Cleaned JSON string:", jsonStr);
       
       // Try to parse the JSON
       let flashcard;
       try {
         flashcard = JSON.parse(jsonStr);
-        console.log("Parsed flashcard data:", flashcard);
+        logger.debug("Parsed flashcard data:", flashcard);
       } catch (error) {
-        console.error("Failed to parse JSON response:", jsonStr);
+        logger.error("Failed to parse JSON response:", jsonStr);
         throw new Error(`Invalid JSON response from AI: ${error instanceof Error ? error.message : 'Unknown parsing error'}`);
       }
 
       // Validate the response structure and length
       if (!flashcard.front || !flashcard.back) {
-        console.error("Invalid flashcard structure:", flashcard);
+        logger.error("Invalid flashcard structure:", flashcard);
         throw new Error("AI response missing required fields (front/back)");
       }
 
       // Truncate content if it exceeds limits
       if (flashcard.front.length > 150) {
-        console.warn("Front content too long, truncating...");
+        logger.warn("Front content too long, truncating...");
         flashcard.front = flashcard.front.slice(0, 147) + "...";
       }
       if (flashcard.back.length > 450) {
-        console.warn("Back content too long, truncating...");
+        logger.warn("Back content too long, truncating...");
         flashcard.back = flashcard.back.slice(0, 447) + "...";
       }
 
@@ -75,10 +76,10 @@ export class AIService {
         },
       };
       
-      console.log("Final flashcard data:", result);
+      logger.debug("Final flashcard data:", result);
       return result;
     } catch (error) {
-      console.error("Error generating flashcard:", error);
+      logger.error("Error generating flashcard:", error);
       throw error;
     }
   }

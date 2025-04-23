@@ -1,6 +1,7 @@
 import type { ChatInput, ChatResponse, ModelParameters, RequestPayload } from "../../types";
 import { OpenRouterError, OpenRouterErrorCode } from "../../types";
 import { fetch, Response } from "undici";
+import { logger } from './logger.service';
 
 interface OpenRouterAPIResponse {
   choices: {
@@ -32,15 +33,15 @@ export class OpenRouterService {
 
   constructor(apiKey?: string) {
     const key = apiKey || import.meta.env.OPENROUTER_API_KEY;
-    console.log("OpenRouterService initialization:");
-    console.log("- API Key from parameter:", apiKey ? "provided" : "not provided");
-    console.log("- API Key from import.meta.env:", import.meta.env.OPENROUTER_API_KEY ? "provided" : "not provided");
-    console.log("- Final API Key:", key ? "provided" : "not provided");
-    console.log("- Environment variables available:", Object.keys(import.meta.env).join(", "));
+    logger.debug("OpenRouterService initialization:");
+    logger.debug("- API Key from parameter:", apiKey ? "provided" : "not provided");
+    logger.debug("- API Key from import.meta.env:", import.meta.env.OPENROUTER_API_KEY ? "provided" : "not provided");
+    logger.debug("- Final API Key:", key ? "provided" : "not provided");
+    logger.debug("- Environment variables available:", Object.keys(import.meta.env).join(", "));
 
     if (!key) {
-      console.error("OpenRouterService initialization failed:");
-      console.error("- import.meta.env:", import.meta.env);
+      logger.error("OpenRouterService initialization failed:");
+      logger.error("- import.meta.env:", import.meta.env);
       throw new OpenRouterError("Missing OPENROUTER_API_KEY environment variable", 401, OpenRouterErrorCode.AUTH_ERROR);
     }
 
@@ -76,7 +77,7 @@ export class OpenRouterService {
           throw lastError;
         }
 
-        console.warn(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`, {
+        logger.warn(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`, {
           error: lastError.message,
           attempt: attempt + 1,
           maxRetries: this.retryConfig.maxRetries,
@@ -137,9 +138,9 @@ export class OpenRouterService {
   private async sendRequest(payload: RequestPayload): Promise<Response> {
     return this.withRetry(async () => {
       try {
-        console.log("Sending request to OpenRouter API...");
-        console.log("API Key length:", this.apiKey.length);
-        console.log("Request payload:", JSON.stringify(payload, null, 2));
+        logger.debug("Sending request to OpenRouter API...");
+        logger.debug("API Key length:", this.apiKey.length);
+        logger.debug("Request payload:", JSON.stringify(payload, null, 2));
 
         const response = await fetch(`${this.baseUrl}/chat/completions`, {
           method: "POST",
@@ -154,7 +155,7 @@ export class OpenRouterService {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("OpenRouter API Error:", {
+          logger.error("OpenRouter API Error:", {
             status: response.status,
             statusText: response.statusText,
             errorText,
@@ -182,7 +183,7 @@ export class OpenRouterService {
           throw error;
         }
 
-        console.error("Network or parsing error:", error);
+        logger.error("Network or parsing error:", error);
         throw new OpenRouterError(
           error instanceof Error ? error.message : "Network error occurred",
           500,
@@ -265,7 +266,7 @@ export class OpenRouterService {
     try {
       this.validateResponse(data);
     } catch (error) {
-      console.error("Response validation failed:", data);
+      logger.error("Response validation failed:", data);
       throw error;
     }
 

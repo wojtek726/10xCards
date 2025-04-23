@@ -1,11 +1,12 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance, setSecureCookies, AUTH_COOKIE_NAMES } from "../../../db/supabase.client";
+import { logger } from '../../../lib/services/logger.service';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  console.log("Login API endpoint started");
+  logger.info("Login API endpoint started");
   try {
     const { login, password } = await request.json();
-    console.log("Received login request for email:", login);
+    logger.info("Received login request for email:", login);
 
     const supabase = createSupabaseServerInstance({ request, cookies });
 
@@ -16,7 +17,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
     if (authError) {
-      console.error("Supabase Auth Error:", authError);
+      logger.error("Supabase Auth Error:", authError);
       return new Response(
         JSON.stringify({
           error: authError.message,
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (!authData.user || !authData.session) {
-      console.error("No user or session data returned");
+      logger.error("No user or session data returned");
       return new Response(
         JSON.stringify({
           error: "Nie udało się zalogować.",
@@ -35,7 +36,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    console.log("User authenticated successfully:", {
+    logger.info("User authenticated successfully:", {
       id: authData.user.id,
       email: authData.user.email,
       tokenLength: authData.session.access_token.length,
@@ -50,7 +51,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Jeśli nie ma wpisu w public.users lub wystąpił błąd "not found", tworzymy go
     if (!userData || (userError && userError.code === "PGRST116")) {
-      console.log("Creating new user record in database:", {
+      logger.info("Creating new user record in database:", {
         id: authData.user.id,
         email: login,
       });
@@ -102,7 +103,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     headers.append("Set-Cookie", cookieHeader(AUTH_COOKIE_NAMES.authCookie, authTokenValue));
 
     // Sprawdzamy czy ciasteczka zostały ustawione
-    console.log("Cookies set:", { 
+    logger.debug("Cookies set:", { 
       accessToken: cookies.has(AUTH_COOKIE_NAMES.accessToken),
       refreshToken: cookies.has(AUTH_COOKIE_NAMES.refreshToken),
       authCookie: cookies.has(AUTH_COOKIE_NAMES.authCookie)
@@ -123,7 +124,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     );
   } catch (err) {
-    console.error("Authentication error:", err);
+    logger.error("Authentication error:", err);
     return new Response(
       JSON.stringify({
         error: "Wystąpił nieoczekiwany błąd podczas logowania.",

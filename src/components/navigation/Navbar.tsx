@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { User } from "@supabase/supabase-js";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { logger } from '../../lib/services/logger.service';
 
 interface NavbarProps {
   user: User | null;
@@ -58,7 +59,7 @@ export default function Navbar({ user }: NavbarProps) {
       // Force a hard reload to ensure all state is reset
       window.location.href = "/auth/login?logout=" + Date.now();
     } catch (error) {
-      console.error("Błąd podczas wylogowywania:", error);
+      logger.error("Błąd podczas wylogowywania:", error);
       setIsLoggingOut(false);
     }
   };

@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect as _expect } from '@playwright/test';
 
-test('test', async ({ page }) => {
+test('basic test', async ({ page: _page }) => {
   // Recording...
 });

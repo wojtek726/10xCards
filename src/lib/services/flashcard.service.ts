@@ -6,6 +6,7 @@ import type {
   UpdateFlashcardCommandDTO,
   PaginationDTO,
 } from "../../types";
+import { logger } from './logger.service';
 
 export class FlashcardService {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
@@ -129,7 +130,7 @@ export class FlashcardService {
   ): Promise<{ flashcards: FlashcardDTO[]; pagination: PaginationDTO }> {
     // Return mock data in test mode to avoid database errors
     if (isTestMode || userId === 'test-user-id') {
-      console.log("Using test mode data for flashcards");
+      logger.debug("Using test mode data for flashcards");
       const mockFlashcards: FlashcardDTO[] = [
         {
           id: 'test-1',
@@ -182,6 +183,7 @@ export class FlashcardService {
         .range(offset, offset + limit - 1);
 
       if (error) {
+        logger.error("Error fetching flashcards:", error);
         throw new Error(`Failed to fetch flashcards: ${error.message}`);
       }
 

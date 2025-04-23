@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { logger } from '../../../lib/services/logger.service';
 
 // Rozszerzamy listę ciasteczek do usunięcia, aby uwzględnić wszystkie możliwe warianty
 const COOKIES_TO_DELETE = [
@@ -16,7 +17,7 @@ const COOKIES_TO_DELETE = [
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    console.log("Logout endpoint called - removing all auth cookies");
+    logger.info("Logout endpoint called - removing all auth cookies");
     
     // Sprawdź czy jesteśmy w środowisku developerskim (bez HTTPS)
     const isDevelopment = request.url.includes('localhost') || request.url.includes('127.0.0.1');
@@ -46,7 +47,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       const supabase = createSupabaseServerInstance({ request, cookies });
       await supabase.auth.signOut({ scope: 'global' }); // Użyj scope: 'global' aby wylogować ze wszystkich urządzeń
     } catch (error) {
-      console.log('Supabase signOut error (ignorowany):', error);
+      logger.warn('Supabase signOut error (ignorowany):', error);
     }
 
     // 3. Dodaj nagłówki zapobiegające cachowaniu i wymuszające wyczyszczenie danych
@@ -57,7 +58,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       'Clear-Site-Data': '"cookies", "storage", "cache"'
     });
 
-    console.log("Logout successful - all cookies cleared");
+    logger.info("Logout successful - all cookies cleared");
     
     return new Response(
       JSON.stringify({ success: true }),
@@ -67,7 +68,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       }
     );
   } catch (err) {
-    console.error("Błąd podczas wylogowywania:", err);
+    logger.error("Błąd podczas wylogowywania:", err);
     
     // Sprawdź czy jesteśmy w środowisku developerskim (bez HTTPS)
     const isDevelopment = request.url.includes('localhost') || request.url.includes('127.0.0.1');
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           expires: new Date(0)
         });
       } catch (e) {
-        console.error(`Błąd podczas usuwania ciasteczka ${cookieName}:`, e);
+        logger.error(`Błąd podczas usuwania ciasteczka ${cookieName}:`, e);
       }
     });
 

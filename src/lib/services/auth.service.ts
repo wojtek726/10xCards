@@ -1,5 +1,6 @@
 import { AuthError } from '@supabase/supabase-js';
 import { supabaseClient } from '@/db/supabase.client';
+import type { AuthResponse, SignInDTO, SignUpDTO } from '@/types';
 
 const ERROR_MESSAGES = {
   'Invalid login credentials': 'Niepoprawny email lub hasło',
@@ -9,48 +10,62 @@ const ERROR_MESSAGES = {
 } as const;
 
 export class AuthService {
-  static async signIn(email: string, password: string) {
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password,
-      });
+  static async signIn(credentials: SignInDTO): Promise<AuthResponse> {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        login: credentials.email,
+        password: credentials.password
+      }),
+    });
 
-      if (error) {
-        throw error;
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Nieprawidłowy email lub hasło");
       }
-
-      return { data, error: null };
-    } catch (error) {
-      if (error instanceof AuthError) {
-        const message = ERROR_MESSAGES[error.message as keyof typeof ERROR_MESSAGES] || 'Wystąpił błąd podczas logowania';
-        return { data: null, error: message };
-      }
-      return { data: null, error: 'Wystąpił nieoczekiwany błąd' };
+      throw new Error("Wystąpił błąd podczas logowania");
     }
+
+    return response.json();
   }
+  
+  static async signUp(userData: SignUpDTO): Promise<AuthResponse> {
+    const response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
 
-  static async signUp(email: string, password: string) {
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        throw error;
+    if (!response.ok) {
+      if (response.status === 400) {
+        const data = await response.json();
+        throw new Error(data.error || "Nieprawidłowe dane rejestracji");
       }
+      throw new Error("Wystąpił błąd podczas rejestracji");
+    }
 
-      return { data, error: null };
-    } catch (error) {
-      if (error instanceof AuthError) {
-        const message = ERROR_MESSAGES[error.message as keyof typeof ERROR_MESSAGES] || 'Wystąpił błąd podczas rejestracji';
-        return { data: null, error: message };
+    return response.json();
+  }
+  
+  static async resetPassword(email: string): Promise<void> {
+    const response = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 400) {
+        throw new Error("Nieprawidłowy adres email");
       }
-      return { data: null, error: 'Wystąpił nieoczekiwany błąd' };
+      throw new Error("Wystąpił błąd podczas resetowania hasła");
     }
   }
 

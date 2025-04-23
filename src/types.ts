@@ -231,3 +231,23 @@ export class OpenRouterError extends Error {
     return error.message.toLowerCase().includes("network") || error.message.toLowerCase().includes("timeout");
   }
 }
+
+export interface SignInDTO {
+  email: string;
+  password: string;
+}
+
+export interface SignUpDTO extends SignInDTO {
+  confirmPassword: string;
+}
+
+export interface AuthResponse {
+  user: {
+    id: string;
+    email: string;
+  };
+  session: {
+    access_token: string;
+    expires_at: number;
+  };
+}

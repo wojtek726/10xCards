@@ -20,6 +20,15 @@ on:
         type: boolean
         default: false
 
+# Zapobieganie równoległemu uruchamianiu workflow dla tego samego PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   lint:
     name: Lint
@@ -39,10 +48,14 @@ jobs:
       - name: Run linting
         run: npm run lint
 
-  unit-tests:
-    name: Unit Tests
-    needs: lint
+  parallel-tests:
+    needs: [lint]
+    name: Tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, e2e]
     steps:
       - uses: actions/checkout@v4
       
@@ -54,75 +67,74 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
-        
+
+      # Kroki specyficzne dla testów jednostkowych
       - name: Run unit tests with coverage
+        if: matrix.test-type == 'unit'
         run: npm run test:coverage
         
       - name: Upload unit test coverage
+        if: matrix.test-type == 'unit'
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-coverage
           path: coverage/
-          
-  e2e-tests:
-    name: E2E Tests
-    needs: lint
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'integration' }}
-    
-    env:
-      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      DEBUG: ${{ github.event.inputs.debug_enabled == 'true' && 'pw:api' || '' }}
-      
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
+
+      # Kroki specyficzne dla testów E2E
       - name: Install Playwright browsers
+        if: matrix.test-type == 'e2e'
         run: npx playwright install chromium
         
       - name: Run E2E tests
+        if: matrix.test-type == 'e2e'
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DEBUG: ${{ github.event.inputs.debug_enabled == 'true' && 'pw:api' || '' }}
         run: npm run test:e2e
         
       - name: Upload E2E test results
-        if: always()
+        if: matrix.test-type == 'e2e'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
-          
+
   status-comment:
     name: Update PR Status
-    needs: [unit-tests, e2e-tests]
-    runs-on: ubuntu-latest
     if: always()
-    
+    needs: [parallel-tests]
+    runs-on: ubuntu-latest
     steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          
       - name: Create Status Comment
         uses: actions/github-script@v7
         with:
           script: |
-            const unitTests = '${{ needs.unit-tests.result }}';
-            const e2eTests = '${{ needs.e2e-tests.result }}';
+            const testResult = '${{ needs.parallel-tests.result }}';
             
-            let status = '✅ All checks have passed!';
-            if (unitTests !== 'success' || e2eTests !== 'success') {
-              status = '❌ Some checks have failed:';
-              if (unitTests !== 'success') status += '\n- Unit Tests failed';
-              if (e2eTests !== 'success') status += '\n- E2E Tests failed';
+            let status = '## 🔍 Pull Request Check Results\n\n';
+            
+            if (testResult === 'success') {
+              status += '✅ Wszystkie testy przeszły pomyślnie!\n\n';
+            } else {
+              status += '❌ Wykryto problemy:\n';
+              if (testResult !== 'success') {
+                status += '- Nie wszystkie testy zakończyły się sukcesem\n';
+              }
             }
             
-            github.rest.issues.createComment({
+            // Dodaj linki do artefaktów
+            status += '\n### 📊 Raporty\n';
+            status += '- [Raport pokrycia testów jednostkowych](../artifacts/unit-test-coverage)\n';
+            status += '- [Raport testów E2E](../artifacts/playwright-report)\n';
+            
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.name,

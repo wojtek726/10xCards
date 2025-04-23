@@ -3,8 +3,13 @@ name: E2E Tests
 on:
   push:
     branches: [ main, develop ]
+    tags:
+      - 'v*'  # Uruchom dla tagów zaczynających się od v (np. v1.0.0)
   pull_request:
     branches: [ main, develop ]
+  # Uruchom codziennie o północy UTC
+  schedule:
+    - cron: '0 0 * * *'
   # Allow manual triggering
   workflow_dispatch:
 
@@ -32,7 +37,9 @@ jobs:
       run: npm install -g wait-on
 
     - name: Start application in background
-      run: npm run dev &
+      run: |
+        npx astro dev --host 0.0.0.0 &
+        echo "Application started with PID $!"
       env:
         # Required environment variables for testing
         NODE_ENV: test
@@ -41,7 +48,24 @@ jobs:
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     - name: Wait for application to start
-      run: npx wait-on http://localhost:3000 -t 60000
+      run: |
+        echo "Waiting for application to be ready..."
+        npx wait-on -v http://0.0.0.0:3000/api/health -t 120000 --httpTimeout 60000
+        echo "Application is ready!"
+
+    # Debug steps that run only on failure
+    - name: Debug - Check network
+      run: |
+        echo "Checking network status..."
+        netstat -tulpn || true
+        curl -v http://localhost:3000 || true
+      if: failure()
+
+    - name: Debug - Check logs
+      run: |
+        echo "Last 100 lines of npm output:"
+        cat ~/.npm/_logs/$(ls -t ~/.npm/_logs | head -n1) || true
+      if: failure()
 
     # Run the basic tests first which should always pass
     - name: Run basic E2E tests

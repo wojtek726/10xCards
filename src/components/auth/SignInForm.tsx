@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,7 +11,7 @@ import type { z } from "zod";
 
 type FormValues = z.infer<typeof authSchemas.login>;
 
-export default function SignInForm() {
+export function SignInForm() {
   const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
     schema: authSchemas.login,
     defaultValues: {

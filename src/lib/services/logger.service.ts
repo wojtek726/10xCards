@@ -1,8 +1,6 @@
 /* eslint-disable no-console */
-import { env } from 'process';
-
 class Logger {
-  private isDevelopment = env.NODE_ENV === 'development';
+  private isDevelopment = import.meta.env.DEV;
 
   private log(level: 'debug' | 'info' | 'warn' | 'error', ...args: unknown[]): void {
     if ((level === 'debug' || level === 'info') && !this.isDevelopment) {

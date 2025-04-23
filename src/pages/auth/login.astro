@@ -1,16 +1,14 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import SignInForm from '../../components/auth/SignInForm';
 import { ViewTransitions } from 'astro:transitions';
+import { SignInForm } from '../../components/auth/SignInForm';
 import { logger } from '../../lib/services/logger.service';
 
-// Redirect if user is already logged in
-const { user, supabase } = Astro.locals;
+logger.debug('Rendering login page');
 
-// Sprawdzamy, czy to jest przekierowanie po wylogowaniu
+const { user, supabase } = Astro.locals;
 const isLogout = Astro.url.searchParams.has('logout');
 
-// Jeśli to jest wylogowanie, czyścimy wszystkie ciasteczka
 if (isLogout) {
   const cookiesToDelete = [
     'sb-access-token',
@@ -27,7 +25,6 @@ if (isLogout) {
   });
 }
 
-// Dodajemy sprawdzanie ciasteczek bezpośrednio
 const accessToken = Astro.cookies.get('sb-access-token');
 const refreshToken = Astro.cookies.get('sb-refresh-token');
 const supabaseAuthToken = Astro.cookies.get('supabase-auth-token');
@@ -39,7 +36,6 @@ logger.debug('- Has refresh token cookie:', !!refreshToken);
 logger.debug('- Has supabase auth token cookie:', !!supabaseAuthToken);
 logger.debug('- All cookies:', Astro.request.headers.get('cookie'));
 
-// Jeśli mamy tokeny, sprawdźmy czy sesja jest ważna
 if (accessToken && refreshToken && supabase && !isLogout) {
   try {
     const { data, error } = await supabase.auth.getUser();
@@ -54,7 +50,6 @@ if (accessToken && refreshToken && supabase && !isLogout) {
   }
 }
 
-// Sprawdzamy podstawowo czy użytkownik jest zalogowany (z middleware)
 if (user && !isLogout) {
   logger.debug('User in locals, redirecting to /flashcards');
   return Astro.redirect('/flashcards');
@@ -67,7 +62,9 @@ if (user && !isLogout) {
     <div class="max-w-md mx-auto">
       <SignInForm client:load />
       <div class="mt-4 text-center">
-        <a href="/auth/signup" class="text-blue-600 hover:underline">Nie masz konta? Zarejestruj się</a>
+        <a href="/auth/signup" class="text-blue-600 hover:underline">
+          Nie masz konta? Zarejestruj się
+        </a>
       </div>
     </div>
   </div>
@@ -76,27 +73,23 @@ if (user && !isLogout) {
 <script>
   import { logger } from '../../lib/services/logger.service';
 
-  // Funkcja pomocnicza do czyszczenia ciasteczek po stronie klienta
   function deleteAllCookies() {
-    const cookies = document.cookie.split(";");
+    const cookies = document.cookie.split(';');
     
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i];
-      const eqPos = cookie.indexOf("=");
+      const eqPos = cookie.indexOf('=');
       const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
       
-      // Usuwamy każde ciasteczko ustawiając datę wygaśnięcia w przeszłości
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;secure`;
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
     }
   }
 
-  // Sprawdź, czy strona została załadowana po wylogowaniu
   if (window.location.search.includes('logout')) {
     logger.debug('Logout detected, clearing all cookies client-side');
     deleteAllCookies();
-    // Usuń parametr logout z URL bez odświeżania strony
     window.history.replaceState({}, document.title, window.location.pathname);
   }
-</script>
+</script> 

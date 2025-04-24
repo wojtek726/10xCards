@@ -4,9 +4,11 @@ import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 import { logger } from '../lib/services/logger.service';
 
-// Pobieramy zmienne środowiskowe
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+// Get environment variables - handling both naming conventions
+// CI uses PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY
+// Local dev uses SUPABASE_URL and SUPABASE_KEY
+const supabaseUrl = import.meta.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.SUPABASE_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 const siteUrl = import.meta.env.SITE_URL || 'http://localhost:3000'; // Domyślnie do 3000 zgodnie z konfiguracją
 

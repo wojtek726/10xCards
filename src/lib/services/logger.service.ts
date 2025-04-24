@@ -1,12 +1,42 @@
 /* eslint-disable no-console */
-class Logger {
-  private isDevelopment = import.meta.env.DEV;
 
+/**
+ * Simple logger utility that suppresses debug and info logs in production
+ */
+class Logger {
+  private isDevelopment: boolean;
+
+  constructor(isDevelopment?: boolean) {
+    // Try to determine development mode from NODE_ENV if not explicitly provided
+    if (isDevelopment === undefined) {
+      try {
+        this.isDevelopment = process.env.NODE_ENV !== 'production';
+      } catch (e) {
+        // Default to true if environment detection fails
+        this.isDevelopment = true;
+      }
+    } else {
+      this.isDevelopment = isDevelopment;
+    }
+  }
+
+  /**
+   * Set development mode
+   */
+  setDevelopmentMode(isDevelopment: boolean): void {
+    this.isDevelopment = isDevelopment;
+  }
+
+  /**
+   * Internal logging method
+   */
   private log(level: 'debug' | 'info' | 'warn' | 'error', ...args: unknown[]): void {
+    // Skip debug and info logs in production
     if ((level === 'debug' || level === 'info') && !this.isDevelopment) {
       return;
     }
 
+    // Log with appropriate console method
     switch (level) {
       case 'debug':
         console.debug(`[${level.toUpperCase()}]`, ...args);
@@ -40,4 +70,5 @@ class Logger {
   }
 }
 
+// Export a singleton instance - development mode will be determined by environment
 export const logger = new Logger(); 

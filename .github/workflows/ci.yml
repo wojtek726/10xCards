@@ -103,8 +103,19 @@ jobs:
 
       - name: Start application in background
         run: |
+          echo "Starting application with the following environment:"
+          echo "NODE_ENV: $NODE_ENV"
+          echo "Has PUBLIC_SUPABASE_URL: $([ -n "$PUBLIC_SUPABASE_URL" ] && echo "Yes" || echo "No")"
+          echo "Has PUBLIC_SUPABASE_ANON_KEY: $([ -n "$PUBLIC_SUPABASE_ANON_KEY" ] && echo "Yes" || echo "No")"
+          echo "Has SUPABASE_SERVICE_ROLE_KEY: $([ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "Yes" || echo "No")"
+          
           npx astro dev --host 0.0.0.0 &
-          echo "Application started with PID $!"
+          APP_PID=$!
+          echo "Application started with PID $APP_PID"
+          
+          # Give the app a moment to initialize
+          sleep 10
+          ps -p $APP_PID || echo "Warning: Process not found"
         env:
           NODE_ENV: test
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
@@ -115,7 +126,21 @@ jobs:
       - name: Wait for application to start
         run: |
           echo "Waiting for application to be ready..."
-          npx wait-on -v http://0.0.0.0:3000/api/health -t 120000 --httpTimeout 60000
+          # Try to check health endpoint with debugging output
+          for i in {1..10}; do
+            echo "Attempt $i to connect to health endpoint..."
+            curl -v http://0.0.0.0:3000/api/health || true
+            sleep 5
+          done
+          
+          # Use wait-on with longer timeout
+          npx wait-on -v http://0.0.0.0:3000/api/health -t 120000 --httpTimeout 60000 || {
+            echo "Health check failed. Checking environment..."
+            env | grep -i supabase || true
+            echo "Fetching health endpoint response:"
+            curl -v http://0.0.0.0:3000/api/health || true
+            exit 1
+          }
           echo "Application is ready!"
 
       # Run basic tests first (must pass)

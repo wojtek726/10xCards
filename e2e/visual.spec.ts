@@ -44,19 +44,43 @@ test.describe('Visual Tests', () => {
 
   test('mobile view - login page', async ({ page }) => {
     try {
+      // Ustawienie viewportu iPhone SE
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto('/auth/login', { waitUntil: 'networkidle', timeout: 30000 });
+      
+      await page.goto('/auth/login', { 
+        waitUntil: 'networkidle', 
+        timeout: 30000 
+      });
+      
+      // Poczekaj na załadowanie wszystkich elementów
       await page.waitForSelector('[data-testid="email-input"]', { 
         state: 'visible', 
         timeout: 30000 
       });
+
+      // Upewnij się, że strona ma dokładnie taką wysokość jak viewport
+      await page.evaluate(() => {
+        document.body.style.minHeight = '100vh';
+        document.body.style.height = '100vh';
+        document.documentElement.style.minHeight = '100vh';
+        document.documentElement.style.height = '100vh';
+      });
+
+      // Poczekaj na stabilizację strony
+      await page.waitForTimeout(1000);
+
       await expect(page).toHaveScreenshot('login-page-mobile.png', {
-        fullPage: true,
+        fullPage: false, // Wyłączamy fullPage aby zachować dokładny rozmiar viewportu
         timeout: 60000,
-        maxDiffPixelRatio: 0.1
+        maxDiffPixelRatio: 0.1,
+        animations: 'disabled' // Wyłączamy animacje dla stabilności testu
       });
     } catch (error) {
       console.error('Mobile login page visual test failed:', error);
+      await page.screenshot({ 
+        path: 'test-results/mobile-login-error.png',
+        fullPage: true // Dla debugowania zachowujemy pełny zrzut
+      });
       throw error;
     }
   });

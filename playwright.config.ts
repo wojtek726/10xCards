@@ -10,7 +10,8 @@ const __dirname = path.dirname(__filename);
  * See https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './',
+  testMatch: ['**/*.spec.ts', '**/*.test.ts'],
   /* Maximum time one test can run for */
   timeout: 60 * 1000,
   expect: {
@@ -46,14 +47,27 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
     /* Set actionability timeout */
     actionTimeout: 15000,
+    /* Configure TypeScript module resolution */
+    tsconfig: {
+      baseUrl: '.',
+      paths: {
+        '@/*': ['./src/*']
+      }
+    }
   },
 
-  /* Configure projects for specific browsers */
+  /* Configure projects for major test types */
   projects: [
     {
-      name: 'chromium',
+      name: 'e2e',
+      testDir: './e2e',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'unit',
+      testDir: './src',
+      use: { ...devices['Desktop Chrome'] },
+    }
   ],
 
   /* Run your local dev server before starting the tests */

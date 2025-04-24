@@ -5,6 +5,47 @@ test.describe('Flashcard Generation Flow', () => {
   // Use authenticated test for all tests in this describe block
   test.use({ isAuthenticated: true });
 
+  test('should generate flashcards from text', async ({ page }) => {
+    const generationPage = new FlashcardGenerationPage(page);
+    const listPage = new FlashcardsListPage(page);
+
+    await test.step('Navigate to generation page', async () => {
+      await generationPage.goto();
+      await expect(page).toHaveURL('/flashcards/generate');
+    });
+
+    await test.step('Enter text and generate flashcards', async () => {
+      await generationPage.enterText('Test text for flashcard generation');
+      await generationPage.clickGenerate();
+      
+      // Wait for generation to complete
+      await generationPage.waitForGeneration();
+    });
+
+    await test.step('Verify generated flashcards', async () => {
+      // Navigate to flashcards list
+      await listPage.goto();
+      await expect(page).toHaveURL('/flashcards');
+
+      // Check if new flashcards are visible
+      const flashcards = await listPage.getFlashcards();
+      expect(flashcards.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('should handle generation errors gracefully', async ({ page }) => {
+    const generationPage = new FlashcardGenerationPage(page);
+
+    await test.step('Navigate to generation page', async () => {
+      await generationPage.goto();
+    });
+
+    await test.step('Try to generate with empty text', async () => {
+      await generationPage.clickGenerate();
+      await expect(generationPage.getErrorMessage()).toBeVisible();
+    });
+  });
+
   test('should generate and accept a new flashcard', async ({ page }) => {
     // Arrange
     const listPage = new FlashcardsListPage(page);

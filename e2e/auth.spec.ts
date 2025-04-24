@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { AuthPage } from './page-objects/AuthPage';
+import { AuthPage } from './page-objects/auth-page';
 import { mockAuthApi } from './mocks/auth-api';
 
 // Używamy serial, aby testy uruchamiały się jeden po drugim w określonej kolejności

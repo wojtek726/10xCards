@@ -38,62 +38,72 @@ export class FlashcardService {
   }
 
   async updateFlashcard(
+    id: string,
     userId: string,
-    flashcardId: string,
-    command: UpdateFlashcardCommandDTO
-  ): Promise<FlashcardDTO> {
-    // Najpierw sprawdzamy, czy fiszka należy do użytkownika
-    const { data: existingCard, error: fetchError } = await this.supabase
-      .from("flashcards")
+    data: { front: string; back: string }
+  ): Promise<FlashcardDTO | null> {
+    // First check if flashcard exists and belongs to user
+    const { data: existingFlashcard, error: checkError } = await this.supabase
+      .from('flashcards')
       .select()
-      .eq("id", flashcardId)
-      .eq("user_id", userId)
+      .eq('id', id)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
       .single();
 
-    if (fetchError || !existingCard) {
-      throw new Error("Flashcard not found or access denied");
+    if (checkError) {
+      logger.error('Error checking flashcard existence:', { error: checkError, flashcardId: id, userId });
+      if (checkError.code === 'PGRST116') {
+        logger.info('Flashcard not found:', { flashcardId: id, userId });
+        return null;
+      }
+      throw new Error(`Database error while checking flashcard: ${checkError.message}`);
     }
 
-    // Jeśli fiszka była wygenerowana przez AI i jest modyfikowana, zmieniamy jej pochodzenie
-    const card_origin =
-      existingCard.card_origin === "ai" ? "ai_modified" : existingCard.card_origin;
+    if (!existingFlashcard) {
+      logger.info('Flashcard not found or does not belong to user:', { flashcardId: id, userId });
+      return null;
+    }
 
-    const { data, error } = await this.supabase
-      .from("flashcards")
+    // Update flashcard
+    const { data: flashcard, error: updateError } = await this.supabase
+      .from('flashcards')
       .update({
-        ...command,
-        card_origin,
+        front: data.front,
+        back: data.back,
+        card_origin: this.supabase.rpc('get_card_origin_after_update', { flashcard_id: id }),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", flashcardId)
-      .eq("user_id", userId)
+      .eq('id', id)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to update flashcard: ${error.message}`);
+    if (updateError) {
+      logger.error('Error updating flashcard:', { error: updateError, flashcardId: id, userId });
+      throw new Error(`Failed to update flashcard: ${updateError.message}`);
     }
 
-    return {
-      id: data.id,
-      front: data.front,
-      back: data.back,
-      card_origin: data.card_origin,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-    };
+    return flashcard;
   }
 
-  async deleteFlashcard(userId: string, flashcardId: string): Promise<void> {
+  async deleteFlashcard(id: string, userId: string): Promise<boolean> {
     const { error } = await this.supabase
-      .from("flashcards")
-      .delete()
-      .eq("id", flashcardId)
-      .eq("user_id", userId);
+      .from('flashcards')
+      .update({
+        deleted_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .is('deleted_at', null);
 
     if (error) {
-      throw new Error(`Failed to delete flashcard: ${error.message}`);
+      console.error('Error deleting flashcard:', error);
+      return false;
     }
+
+    return true;
   }
 
   async getFlashcard(userId: string, flashcardId: string): Promise<FlashcardDTO | null> {

@@ -3,6 +3,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
 import { FlashcardService } from '../../lib/services/flashcard.service';
 import { createSupabaseServerInstance } from '../../db/supabase.client';
+import { FlashcardsView } from '@/components/flashcards/FlashcardsView';
 
 // Parse URL to detect test flag
 const url = new URL(Astro.request.url);
@@ -39,32 +40,10 @@ const { flashcards } = await flashcardService.getFlashcards(user.id, 1, 10, isTe
         </a>
       </div>
       
-      <div class="grid gap-6">
-        {flashcards.length === 0 ? (
-          <div class="text-center text-muted-foreground">
-            <p>Nie masz jeszcze żadnych fiszek.</p>
-            <p class="mt-2">Kliknij "Generuj nowe fiszki" aby stworzyć swoją pierwszą kolekcję!</p>
-          </div>
-        ) : (
-          <div class="grid gap-4" data-testid="flashcards-list">
-            {flashcards.map((flashcard) => (
-              <div class="p-6 bg-card rounded-lg shadow-sm border">
-                <div class="mb-4">
-                  <h3 class="font-semibold text-lg mb-2">Przód</h3>
-                  <p class="text-muted-foreground">{flashcard.front}</p>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-lg mb-2">Tył</h3>
-                  <p class="text-muted-foreground">{flashcard.back}</p>
-                </div>
-                <div class="mt-4 text-sm text-muted-foreground">
-                  Utworzono: {new Date(flashcard.created_at).toLocaleDateString('pl-PL')}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <FlashcardsView 
+        flashcards={flashcards} 
+        client:load 
+      />
     </div>
   </div>
 </MainLayout> 

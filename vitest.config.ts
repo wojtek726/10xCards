@@ -1,15 +1,20 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [tsconfigPaths()],
   test: {
-    environment: 'jsdom',
+    include: ['src/**/*.test.ts'],
+    exclude: ['e2e/**/*'],
     globals: true,
-    setupFiles: ['./tests/setup.ts'],
+    environment: 'node',
+    setupFiles: ['src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -29,23 +34,23 @@ export default defineConfig({
         'src/components/navigation/**',
         'src/mocks/**'
       ],
-      include: ['src/components/flashcards/**', 'src/lib/utils.ts', 'src/components/ui/form.tsx', 'src/components/ui/button.tsx'],
+      include: [
+        'src/components/flashcards/**',
+        'src/lib/utils.ts',
+        'src/components/ui/form.tsx',
+        'src/components/ui/button.tsx'
+      ],
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 70,
         statements: 80
       }
-    },
-    include: [
-      'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'tests/**/*.{test,spec}.{js,ts,jsx,tsx}'
-    ],
-    exclude: ['node_modules', 'dist', 'e2e']
+    }
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   }
 }); 

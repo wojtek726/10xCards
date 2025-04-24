@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage } from './base-page';
 
 export class FlashcardManagementPage extends BasePage {
   constructor(page: Page) {

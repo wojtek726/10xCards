@@ -1,4 +1,14 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base } from '@playwright/test';
+import { resolve } from 'path';
+import { register } from 'tsconfig-paths';
+
+// Register path aliases
+register({
+  baseUrl: '.',
+  paths: {
+    '@/*': ['./src/*']
+  }
+});
 
 // Cookie names from src/db/supabase.client.ts
 const _AUTH_COOKIE_NAMES = {
@@ -128,4 +138,4 @@ export const test = base.extend<TestFixtures>({
   },
 });
 
-export { expect }; 
+export { expect } from '@playwright/test'; 

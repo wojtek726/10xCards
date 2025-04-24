@@ -3,7 +3,6 @@ import type { Database } from "../../db/database.types";
 import type {
   CreateFlashcardCommandDTO,
   FlashcardDTO,
-  UpdateFlashcardCommandDTO,
   PaginationDTO,
 } from "../../types";
 import { logger } from './logger.service';
@@ -42,64 +41,73 @@ export class FlashcardService {
     userId: string,
     data: { front: string; back: string }
   ): Promise<FlashcardDTO | null> {
-    // First check if flashcard exists and belongs to user
-    const { data: existingFlashcard, error: checkError } = await this.supabase
+    // First, get the current flashcard to check its card_origin
+    const { data: currentFlashcard, error: fetchError } = await this.supabase
       .from('flashcards')
-      .select()
+      .select('card_origin')
       .eq('id', id)
       .eq('user_id', userId)
-      .is('deleted_at', null)
       .single();
 
-    if (checkError) {
-      logger.error('Error checking flashcard existence:', { error: checkError, flashcardId: id, userId });
-      if (checkError.code === 'PGRST116') {
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
         logger.info('Flashcard not found:', { flashcardId: id, userId });
-        return null;
+        throw fetchError;
       }
-      throw new Error(`Database error while checking flashcard: ${checkError.message}`);
+      logger.error('Error fetching flashcard:', { error: fetchError, flashcardId: id, userId });
+      throw fetchError;
     }
 
-    if (!existingFlashcard) {
-      logger.info('Flashcard not found or does not belong to user:', { flashcardId: id, userId });
-      return null;
+    // Determine if we need to update the card_origin
+    let card_origin = currentFlashcard.card_origin;
+    if (card_origin === 'ai') {
+      card_origin = 'ai_modified';
     }
 
-    // Update flashcard
-    const { data: flashcard, error: updateError } = await this.supabase
-      .from('flashcards')
-      .update({
-        front: data.front,
-        back: data.back,
-        card_origin: this.supabase.rpc('get_card_origin_after_update', { flashcard_id: id }),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .select()
-      .single();
+    try {
+      const { data: updatedFlashcard, error } = await this.supabase
+        .from('flashcards')
+        .update({
+          front: data.front,
+          back: data.back,
+          card_origin: card_origin,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-    if (updateError) {
-      logger.error('Error updating flashcard:', { error: updateError, flashcardId: id, userId });
-      throw new Error(`Failed to update flashcard: ${updateError.message}`);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          logger.info('Flashcard not found:', { flashcardId: id, userId });
+          throw error;
+        }
+        logger.error('Error updating flashcard:', { error, flashcardId: id, userId });
+        throw error;
+      }
+
+      logger.info('Flashcard updated:', { flashcardId: id, userId });
+      return updatedFlashcard;
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
+        logger.info('Flashcard not found:', { flashcardId: id, userId });
+        throw error;
+      }
+      logger.error('Error updating flashcard:', { error, flashcardId: id, userId });
+      throw error;
     }
-
-    return flashcard;
   }
 
   async deleteFlashcard(id: string, userId: string): Promise<boolean> {
     const { error } = await this.supabase
       .from('flashcards')
-      .update({
-        deleted_at: new Date().toISOString(),
-      })
+      .delete()
       .eq('id', id)
-      .eq('user_id', userId)
-      .is('deleted_at', null);
+      .eq('user_id', userId);
 
     if (error) {
-      console.error('Error deleting flashcard:', error);
+      logger.error('Error deleting flashcard:', { error, flashcardId: id, userId });
       return false;
     }
 

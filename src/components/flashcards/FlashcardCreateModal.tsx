@@ -1,45 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import type { FlashcardDTO } from "@/types";
 
-interface FlashcardEditModalProps {
-  flashcard: FlashcardDTO | null;
+interface FlashcardCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (flashcard: { front: string; back: string }) => Promise<void>;
+  onCreate: (flashcard: { front: string; back: string }) => Promise<void>;
 }
 
-export function FlashcardEditModal({ flashcard, isOpen, onClose, onSave }: FlashcardEditModalProps) {
-  const [front, setFront] = useState(flashcard?.front || "");
-  const [back, setBack] = useState(flashcard?.back || "");
+export function FlashcardCreateModal({ isOpen, onClose, onCreate }: FlashcardCreateModalProps) {
+  const [front, setFront] = useState("");
+  const [back, setBack] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ front?: string; back?: string }>({});
-
-  // Update form state when flashcard changes
-  useEffect(() => {
-    if (flashcard) {
-      setFront(flashcard.front);
-      setBack(flashcard.back);
-      setErrors({});
-    }
-  }, [flashcard]);
-
-  // Reset form when modal is closed
-  useEffect(() => {
-    if (!isOpen) {
-      setErrors({});
-      if (flashcard) {
-        setFront(flashcard.front);
-        setBack(flashcard.back);
-      } else {
-        setFront("");
-        setBack("");
-      }
-    }
-  }, [isOpen, flashcard]);
 
   const validateForm = () => {
     const newErrors: { front?: string; back?: string } = {};
@@ -69,20 +44,29 @@ export function FlashcardEditModal({ flashcard, isOpen, onClose, onSave }: Flash
 
     setIsSubmitting(true);
     try {
-      await onSave({ front, back });
+      await onCreate({ front, back });
+      setFront("");
+      setBack("");
       onClose();
     } catch (error) {
-      console.error("Błąd podczas zapisywania fiszki:", error);
+      console.error("Błąd podczas tworzenia fiszki:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    setFront("");
+    setBack("");
+    setErrors({});
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edytuj fiszkę</DialogTitle>
+          <DialogTitle>Dodaj nową fiszkę</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,7 +104,7 @@ export function FlashcardEditModal({ flashcard, isOpen, onClose, onSave }: Flash
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Anuluj
@@ -128,9 +112,9 @@ export function FlashcardEditModal({ flashcard, isOpen, onClose, onSave }: Flash
             <Button
               type="submit"
               disabled={isSubmitting}
-              data-testid="save-flashcard-button"
+              data-testid="create-flashcard-button"
             >
-              {isSubmitting ? "Zapisywanie..." : "Zapisz"}
+              {isSubmitting ? "Tworzenie..." : "Dodaj"}
             </Button>
           </div>
         </form>

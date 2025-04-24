@@ -82,4 +82,42 @@ export class BasePage {
       throw error;
     }
   }
+  
+  async ensureAuthentication() {
+    try {
+      // Check if we already have authentication tokens
+      const hasTokens = await this.page.evaluate(() => {
+        return !!localStorage.getItem('sb-access-token') || 
+               !!document.cookie.includes('sb-access-token');
+      });
+      
+      if (!hasTokens) {
+        console.log('No authentication tokens found, adding test tokens');
+        await this.page.evaluate(() => {
+          localStorage.setItem('sb-access-token', 'test-access-token');
+          localStorage.setItem('sb-refresh-token', 'test-refresh-token');
+          localStorage.setItem('supabase-auth-token', JSON.stringify({
+            access_token: 'test-access-token',
+            refresh_token: 'test-refresh-token'
+          }));
+          
+          document.cookie = 'sb-access-token=test-access-token; path=/';
+          document.cookie = 'sb-refresh-token=test-refresh-token; path=/';
+          
+          localStorage.setItem('user', JSON.stringify({
+            id: 'test-user-id',
+            email: 'test@example.com'
+          }));
+          
+          console.log('Test authentication data added');
+          return true;
+        });
+        
+        // Reload page to apply authentication
+        await this.page.reload();
+      }
+    } catch (error) {
+      console.error('Failed to ensure authentication:', error);
+    }
+  }
 } 

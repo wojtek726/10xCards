@@ -176,4 +176,86 @@ describe('FlashcardService', () => {
       expect.objectContaining({ message: "Failed to fetch flashcards: Database error" })
     );
   });
+
+  it('should update a flashcard and keep card_origin as manual', async () => {
+    // Arrange - first, mock the select query to get current flashcard
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { card_origin: 'manual' },
+      error: null
+    });
+
+    // Then, mock the update query
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.update.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: '1',
+        front: 'Updated front',
+        back: 'Updated back',
+        card_origin: 'manual',
+        created_at: '2023-01-01T00:00:00.000Z',
+        updated_at: new Date().toISOString()
+      },
+      error: null
+    });
+
+    // Act
+    const updatedFlashcard = await service.updateFlashcard(
+      '1', 
+      'test-user', 
+      { front: 'Updated front', back: 'Updated back' }
+    );
+
+    // Assert
+    expect(updatedFlashcard).toBeDefined();
+    expect(updatedFlashcard?.front).toBe('Updated front');
+    expect(updatedFlashcard?.back).toBe('Updated back');
+    expect(updatedFlashcard?.card_origin).toBe('manual'); // Should remain as manual
+  });
+
+  it('should update a flashcard and change card_origin from ai to ai_modified', async () => {
+    // Arrange - first, mock the select query to get current flashcard
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { card_origin: 'ai' }, // This is an AI-generated card
+      error: null
+    });
+
+    // Then, mock the update query
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.update.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: '2',
+        front: 'Updated AI card',
+        back: 'Updated AI explanation',
+        card_origin: 'ai_modified', // This should be changed to ai_modified
+        created_at: '2023-01-02T00:00:00.000Z',
+        updated_at: new Date().toISOString()
+      },
+      error: null
+    });
+
+    // Act
+    const updatedFlashcard = await service.updateFlashcard(
+      '2', 
+      'test-user', 
+      { front: 'Updated AI card', back: 'Updated AI explanation' }
+    );
+
+    // Assert
+    expect(updatedFlashcard).toBeDefined();
+    expect(updatedFlashcard?.front).toBe('Updated AI card');
+    expect(updatedFlashcard?.back).toBe('Updated AI explanation');
+    expect(updatedFlashcard?.card_origin).toBe('ai_modified'); // Should be changed to ai_modified
+  });
 }); 

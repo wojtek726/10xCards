@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { resolve } from 'path';
+import { resolve as _resolve } from 'path';
 import { register } from 'tsconfig-paths';
 
 // Register path aliases

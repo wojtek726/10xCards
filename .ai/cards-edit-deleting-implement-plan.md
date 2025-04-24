@@ -26,6 +26,22 @@
   - Anuluj
 - Walidacja pól (1-200 znaków dla przodu, 1-500 dla tyłu)
 
+### FlashcardCreateModal.tsx (Nowy)
+- Formularz dodawania nowej fiszki:
+  - Przód fiszki (textarea)
+  - Tył fiszki (textarea)
+- Przyciski:
+  - Dodaj
+  - Anuluj
+- Walidacja pól (taka sama jak w edycji)
+- Automatyczne ustawienie `card_origin` na 'manual'
+
+### FlashcardsView.tsx
+- Dodanie przycisku "Dodaj nową fiszkę" w nagłówku listy
+- Integracja z FlashcardCreateModal
+- Odświeżanie listy po dodaniu nowej fiszki
+- Dodanie animacji przy dodawaniu/usuwaniu fiszek
+
 ## 3. API Endpoints
 
 ### PUT /api/flashcards/:id
@@ -45,41 +61,61 @@
 ### DELETE /api/flashcards/:id
 - Logika:
   - Sprawdzenie czy fiszka należy do zalogowanego użytkownika
-  - Miękkie usunięcie fiszki (dodanie deleted_at)
+  - Usunięcie fiszki
+
+### POST /api/flashcards (Nowy)
+- Request body:
+```typescript
+{
+  front: string;
+  back: string;
+}
+```
+- Logika:
+  - Walidacja pól
+  - Utworzenie nowej fiszki z `card_origin: 'manual'`
+  - Przypisanie do zalogowanego użytkownika
 
 ## 4. Integracja z istniejącym kodem
 
 ### Modyfikacje w src/pages/flashcards/index.astro
 - Dodanie komponentu FlashcardCard zamiast obecnego div'a
 - Przekazywanie props do FlashcardCard
+- Dodanie przycisku tworzenia nowej fiszki
 
 ### Modyfikacje w src/lib/services/flashcard.service.ts
 - Dodanie metod:
+  - createFlashcard
   - updateFlashcard
   - deleteFlashcard
-  - Aktualizacja getFlashcard i getFlashcards o obsługę deleted_at
+  - Aktualizacja getFlashcard i getFlashcards
 
 ## 5. Testy
 
 ### Jednostkowe
 - FlashcardCard.test.tsx
 - FlashcardEditModal.test.tsx
+- FlashcardCreateModal.test.tsx (Nowy)
 
 ### Integracyjne
+- Tworzenie nowej fiszki
 - Edycja fiszki (ai -> ai_modified)
 - Usuwanie fiszki
-- Walidacja formularza edycji
+- Walidacja formularzy
 
 ### E2E
+- Pełny flow tworzenia fiszki
 - Pełny flow edycji fiszki
 - Pełny flow usuwania fiszki
 
 ## 6. Kryteria akceptacji
 
-1. Użytkownik może edytować swoje fiszki
-2. Fiszki AI po edycji są oznaczane jako 'ai_modified'
-3. Użytkownik może usuwać swoje fiszki
-4. Wyświetlane jest pochodzenie fiszki (ai/ai_modified/manual)
-5. Formularze posiadają odpowiednią walidację
-6. Wszystkie akcje wymagają potwierdzenia
-7. UI jest responsywne i dostępne
+1. Użytkownik może tworzyć nowe fiszki manualnie
+2. Użytkownik może edytować swoje fiszki
+3. Fiszki AI po edycji są oznaczane jako 'ai_modified'
+4. Użytkownik może usuwać swoje fiszki
+5. Wyświetlane jest pochodzenie fiszki (ai/ai_modified/manual)
+6. Formularze posiadają odpowiednią walidację
+7. Wszystkie akcje wymagają potwierdzenia
+8. UI jest responsywne i dostępne
+9. Animacje zapewniają płynne przejścia przy dodawaniu/usuwaniu

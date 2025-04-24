@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import type { FlashcardDTO } from "@/types";
+import { motion } from "framer-motion";
 
 interface FlashcardCardProps {
   flashcard: FlashcardDTO;
@@ -37,7 +38,15 @@ export function FlashcardCard({ flashcard, onEdit, onDelete }: FlashcardCardProp
   };
 
   return (
-    <div className="p-6 bg-card rounded-lg shadow-sm border relative" data-testid="flashcard-item">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      className="p-6 bg-card rounded-lg shadow-sm border relative"
+      data-testid="flashcard-item"
+    >
       <div className="absolute top-4 right-4 flex gap-2">
         <Badge variant={getOriginBadgeVariant(flashcard.card_origin)}>
           {getOriginLabel(flashcard.card_origin)}
@@ -78,6 +87,6 @@ export function FlashcardCard({ flashcard, onEdit, onDelete }: FlashcardCardProp
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

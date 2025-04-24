@@ -1,6 +1,6 @@
 import type { APIContext } from "astro";
 
-export async function GET(context: APIContext) {
+export async function GET(_context: APIContext) {
   try {
     // Check essential environment variables
     const supabaseUrl = import.meta.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;

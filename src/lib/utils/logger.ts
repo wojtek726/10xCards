@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 type LogLevel = 'info' | 'warn' | 'error';
 
 interface LogContext {

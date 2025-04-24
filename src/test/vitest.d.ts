@@ -23,5 +23,5 @@ declare module 'vitest' {
 }
 
 declare global {
-  var vi: typeof import('vitest')['vi'];
+  const vi: typeof import('vitest')['vi'];
 } 

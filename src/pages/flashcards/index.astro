@@ -21,7 +21,7 @@ const supabase = createSupabaseServerInstance({ request: Astro.request, cookies:
 const flashcardService = new FlashcardService(supabase);
 
 // Fetch flashcards with test mode flag
-const { flashcards, pagination } = await flashcardService.getFlashcards(user.id, 1, 10, isTestMode);
+const { flashcards } = await flashcardService.getFlashcards(user.id, 1, 10, isTestMode);
 ---
 
 <MainLayout title="Twoje fiszki">

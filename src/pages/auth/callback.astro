@@ -1,12 +1,34 @@
-import { createSupabaseServerInstance } from '@/db/supabase.client';
+---
+import { createSupabaseServerInstance } from '../../db/supabase.client';
+import { logger } from '../../lib/services/logger.service';
 
-const supabase = createSupabaseServerInstance(Astro);
-const { searchParams } = new URL(Astro.request.url);
-const code = searchParams.get('code');
+try {
+  const supabase = createSupabaseServerInstance({ 
+    request: Astro.request, 
+    cookies: Astro.cookies 
+  });
+  
+  const { searchParams } = new URL(Astro.request.url);
+  const code = searchParams.get('code');
 
-if (code) {
-  await supabase.auth.exchangeCodeForSession(code);
+  if (!code) {
+    logger.error('No code provided in callback URL');
+    return Astro.redirect('/auth/login?error=no_code');
+  }
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  
+  if (error) {
+    logger.error('Error exchanging code for session:', error);
+    return Astro.redirect('/auth/login?error=exchange_failed');
+  }
+
+  logger.debug('Successfully exchanged code for session');
+  return Astro.redirect('/auth/login?verification=success');
+} catch (err) {
+  logger.error('Unexpected error in auth callback:', err);
+  return Astro.redirect('/auth/login?error=unexpected');
 }
+---
 
-// Przekierowanie na stronę logowania z odpowiednim komunikatem
-return Astro.redirect('/auth/login?verification=success'); 
+<!-- Strona przekierowania po weryfikacji - nie wymaga treści HTML --> 

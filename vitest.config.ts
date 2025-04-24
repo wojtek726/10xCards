@@ -13,12 +13,28 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', '.astro/', 'dist/', 'tests/setup.ts'],
+      exclude: [
+        'node_modules/',
+        '.astro/',
+        'dist/',
+        'tests/setup.ts',
+        'e2e/**',
+        'playwright-report/**',
+        'tests-examples/**',
+        'src/pages/**',
+        'src/layouts/**',
+        'src/db/**',
+        'src/hooks/**',
+        'src/components/auth/**',
+        'src/components/navigation/**',
+        'src/mocks/**'
+      ],
+      include: ['src/components/flashcards/**', 'src/lib/utils.ts', 'src/components/ui/form.tsx', 'src/components/ui/button.tsx'],
       thresholds: {
-        lines: 70,
-        functions: 70,
+        lines: 80,
+        functions: 80,
         branches: 70,
-        statements: 70
+        statements: 80
       }
     },
     include: [

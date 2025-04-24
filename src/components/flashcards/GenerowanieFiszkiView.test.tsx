@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { GenerowanieFiszkiView } from './GenerowanieFiszkiView';
 import type { GenerateFlashcardResponseDTO } from '@/types';
@@ -28,13 +28,18 @@ describe('GenerowanieFiszkiView', () => {
 
   it('shows loading state when generating flashcard', async () => {
     mockFetch.mockImplementationOnce(() => new Promise(() => {})); // Never resolves to keep loading
-    render(<GenerowanieFiszkiView />);
+    
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     const input = screen.getByRole('textbox');
     const submitButton = screen.getByRole('button', { name: 'Generuj fiszkę' });
 
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(submitButton);
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(submitButton);
+    });
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(input).toBeDisabled();
@@ -51,11 +56,16 @@ describe('GenerowanieFiszkiView', () => {
       })
     });
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     // Wait for the suggestion card to appear
     await waitFor(() => {
@@ -69,11 +79,16 @@ describe('GenerowanieFiszkiView', () => {
   it('displays error message on API failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Test error'));
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     expect(await screen.findByText('Test error')).toBeInTheDocument();
   });
@@ -89,11 +104,16 @@ describe('GenerowanieFiszkiView', () => {
       })
     });
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     expect(await screen.findByText(/Nieprawidłowe dane wejściowe/)).toBeInTheDocument();
   });
@@ -120,12 +140,17 @@ describe('GenerowanieFiszkiView', () => {
       })
     });
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     // Generate flashcard
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     // Wait for flashcard suggestion to appear
     await waitFor(() => {
@@ -134,7 +159,10 @@ describe('GenerowanieFiszkiView', () => {
 
     // Find and click the accept button
     const acceptButton = screen.getByRole('button', { name: 'Akceptuj' });
-    fireEvent.click(acceptButton);
+    
+    await act(async () => {
+      fireEvent.click(acceptButton);
+    });
 
     // Verify the API was called correctly - just check it was called twice,
     // once for generate and once for save
@@ -159,12 +187,17 @@ describe('GenerowanieFiszkiView', () => {
       })
     });
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     // Generate flashcard
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     // Wait for flashcard suggestion to appear
     await waitFor(() => {
@@ -173,7 +206,10 @@ describe('GenerowanieFiszkiView', () => {
 
     // Find and click the reject button
     const rejectButton = screen.getByRole('button', { name: 'Odrzuć' });
-    fireEvent.click(rejectButton);
+    
+    await act(async () => {
+      fireEvent.click(rejectButton);
+    });
 
     // Verify suggestion is removed
     expect(screen.queryByText('Wygenerowana fiszka')).not.toBeInTheDocument();
@@ -194,12 +230,17 @@ describe('GenerowanieFiszkiView', () => {
     // Second: network error when saving
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-    render(<GenerowanieFiszkiView />);
+    await act(async () => {
+      render(<GenerowanieFiszkiView />);
+    });
 
     // Generate flashcard
     const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Test input');
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    
+    await act(async () => {
+      await userEvent.type(input, 'Test input');
+      fireEvent.click(screen.getByRole('button', { name: 'Generuj fiszkę' }));
+    });
 
     // Wait for flashcard suggestion to appear
     await waitFor(() => {
@@ -208,7 +249,10 @@ describe('GenerowanieFiszkiView', () => {
 
     // Find and click the accept button
     const acceptButton = screen.getByRole('button', { name: 'Akceptuj' });
-    fireEvent.click(acceptButton);
+    
+    await act(async () => {
+      fireEvent.click(acceptButton);
+    });
 
     // Verify error message
     expect(await screen.findByText('Network error')).toBeInTheDocument();

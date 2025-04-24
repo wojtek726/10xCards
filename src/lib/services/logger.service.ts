@@ -2,6 +2,18 @@
 class Logger {
   private isDevelopment = import.meta.env.DEV;
 
+  /**
+   * Test function to verify GitHub Actions workflow
+   * @param value Value to test
+   * @returns The same value
+   */
+  testGithubActions(value: string): string {
+    if (!value) {
+      throw new Error('Value cannot be empty');
+    }
+    return value;
+  }
+
   private log(level: 'debug' | 'info' | 'warn' | 'error', ...args: unknown[]): void {
     if ((level === 'debug' || level === 'info') && !this.isDevelopment) {
       return;

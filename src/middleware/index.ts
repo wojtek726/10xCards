@@ -7,8 +7,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { request, cookies, locals } = context;
   const url = new URL(request.url);
   
-  // Bypass authentication checks for test mode 
-  const isTestMode = url.searchParams.has('test') || request.headers.get('x-test-mode') === 'true';
+  // Bypass authentication checks for test mode - for e2e tests
+  const isTestMode = 
+    url.searchParams.has('test') || 
+    request.headers.get('x-test-mode') === 'true' || 
+    (typeof process !== 'undefined' && process.env.RUNNING_E2E === 'true');
+    
   if (isTestMode) {
     logger.debug(`[Middleware] Test mode detected, bypassing auth checks`);
     // Use mock user in test mode
@@ -18,7 +22,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       role: 'authenticated',
       aud: 'authenticated',
       app_metadata: { provider: 'email' },
-      user_metadata: {}
+      user_metadata: {},
+      created_at: new Date().toISOString()
     } as User;
     
     // Add Supabase instance to locals
@@ -130,7 +135,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // Przekieruj do logowania jeśli użytkownik nie jest uwierzytelniony i trasa wymaga autoryzacji
       if (!locals.user && !isPublicRoute) {
         logger.debug(`[Middleware] Redirecting unauthenticated user from ${url.pathname} to /auth/login`);
-        return Response.redirect(new URL("/auth/login", request.url), 302);
+        return Response.redirect(new URL(`/auth/login?redirect=${encodeURIComponent(url.pathname)}`, request.url), 302);
       }
     } catch (err) {
       logger.error(`[Middleware] Authentication error:`, err);

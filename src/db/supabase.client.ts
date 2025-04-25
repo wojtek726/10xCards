@@ -78,10 +78,18 @@ export const createSupabaseServerInstance = ({ request, cookies, useServiceRole 
     hasAccessToken: !!accessToken,
     hasRefreshToken: !!refreshToken,
   });
+
+  const apiKey = useServiceRole ? supabaseServiceRoleKey : supabaseAnonKey;
+  
+  if (useServiceRole) {
+    logger.info("Creating Supabase client with service role key");
+  }
+  
+  logger.debug(`Using Supabase key type: ${useServiceRole ? 'service_role' : 'anon'}`);
   
   const supabase = createServerClient(
     supabaseUrl,
-    useServiceRole ? supabaseServiceRoleKey : supabaseAnonKey,
+    apiKey,
     {
       cookieOptions,
       cookies: {

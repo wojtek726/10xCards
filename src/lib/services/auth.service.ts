@@ -1,5 +1,6 @@
 import { supabaseClient } from '@/db/supabase.client';
 import type { AuthResponse, SignInDTO, SignUpDTO } from '@/types';
+import { logger } from '@/lib/utils/logger';
 
 const _ERROR_MESSAGES = {
   'Invalid login credentials': 'Niepoprawny email lub hasło',
@@ -81,5 +82,77 @@ export class AuthService {
   static async getSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     return session;
+  }
+
+  /**
+   * Zmienia hasło użytkownika
+   * @param currentPassword Aktualne hasło
+   * @param newPassword Nowe hasło
+   * @returns Promise rozwiązywany do boolean wskazującego sukces lub porażkę
+   */
+  static async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
+    try {
+      logger.info("Rozpoczęcie procesu zmiany hasła");
+      
+      const response = await fetch("/api/auth/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        logger.error("Błąd podczas zmiany hasła z API", { 
+          status: response.status,
+          error: errorData.error 
+        });
+        return false;
+      }
+      
+      logger.info("Hasło użytkownika zostało zmienione pomyślnie");
+      return true;
+    } catch (error) {
+      logger.error("Nieoczekiwany błąd podczas zmiany hasła", { error });
+      return false;
+    }
+  }
+
+  /**
+   * Usuwa konto użytkownika
+   * @param password Hasło do weryfikacji
+   * @returns Promise rozwiązywany do boolean wskazującego sukces lub porażkę
+   */
+  static async deleteAccount(password: string): Promise<boolean> {
+    try {
+      logger.info("Rozpoczęcie procesu usuwania konta");
+      
+      const response = await fetch("/api/auth/account", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        logger.error("Błąd podczas usuwania konta z API", { 
+          status: response.status,
+          error: errorData.error 
+        });
+        return false;
+      }
+      
+      logger.info("Konto użytkownika zostało usunięte pomyślnie");
+      return true;
+    } catch (error) {
+      logger.error("Nieoczekiwany błąd podczas usuwania konta", { error });
+      return false;
+    }
   }
 } 

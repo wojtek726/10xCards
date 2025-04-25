@@ -9,6 +9,7 @@ interface NavbarProps {
 
 export default function Navbar({ user }: NavbarProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -44,6 +45,10 @@ export default function Navbar({ user }: NavbarProps) {
     }
   };
 
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -60,6 +65,9 @@ export default function Navbar({ user }: NavbarProps) {
               <a href="/flashcards/generate" className="transition-colors hover:text-foreground/80">
                 Generuj fiszki
               </a>
+              <a href="/profile" className="transition-colors hover:text-foreground/80" data-testid="profile-nav-link">
+                Profil
+              </a>
             </div>
           )}
         </div>
@@ -67,9 +75,31 @@ export default function Navbar({ user }: NavbarProps) {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground">
-                {user.email}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {user.email}
+                </span>
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-2" 
+                    onClick={toggleProfileMenu}
+                    data-testid="profile-icon-button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span className="sr-only">Profil</span>
+                  </Button>
+                  <div className={`absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 ${isProfileMenuOpen ? 'block' : 'hidden'} hover:block`}>
+                    <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-testid="profile-link">
+                      Zarządzaj kontem
+                    </a>
+                  </div>
+                </div>
+              </div>
               <Button 
                 variant="outline" 
                 onClick={handleLogout} 

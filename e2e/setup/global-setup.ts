@@ -2,6 +2,7 @@ import { chromium } from '@playwright/test';
 import type { FullConfig } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import './test-environment';
 
 /**
  * Global setup for E2E tests
@@ -9,6 +10,8 @@ import * as path from 'path';
  * - Sets up any global state needed for tests
  */
 export default async function globalSetup(_config: FullConfig): Promise<void> {
+  console.log('Starting E2E test global setup...');
+  
   // Create directories for test artifacts if they don't exist
   const testResultsDir = path.join(process.cwd(), 'test-results');
   const screenshotsDir = path.join(testResultsDir, 'screenshots');

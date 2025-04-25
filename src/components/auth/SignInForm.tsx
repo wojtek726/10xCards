@@ -7,11 +7,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { authSchemas } from "@/lib/validation/auth.schema";
 import { AuthService } from "@/lib/services/auth.service";
 import { useAuthForm } from "@/hooks/useAuthForm";
+import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
 type FormValues = z.infer<typeof authSchemas.login>;
 
 export function SignInForm() {
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
   const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
     schema: authSchemas.login,
     defaultValues: {
@@ -20,22 +23,36 @@ export function SignInForm() {
     },
     onSubmit: async (data) => {
       try {
-        const _response = await AuthService.signIn(data);
+        await AuthService.signIn(data);
         
         // Get redirect URL from query parameters
         const params = new URLSearchParams(window.location.search);
         const redirectTo = params.get('redirectTo') || '/flashcards';
         
+        // Set redirecting state to show loading in the UI
+        setIsRedirecting(true);
+        
         // Wait for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Force page reload to ensure new session is loaded
-        window.location.replace(redirectTo);
+        window.location.href = redirectTo;
       } catch (error) {
-        // ... existing code ...
+        // Error is handled by useAuthForm
       }
     },
   });
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.classList.add('has-mounted');
+    }
+  }, []);
+
+  const hasEmptyFields = !form.getValues('email') || !form.getValues('password');
+  const isBusy = isLoading || isRedirecting;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -44,7 +61,7 @@ export function SignInForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form" ref={formRef}>
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
@@ -61,7 +78,7 @@ export function SignInForm() {
                     <Input
                       placeholder="twoj@email.com"
                       type="email"
-                      disabled={isLoading}
+                      disabled={isBusy}
                       data-testid="email-input"
                       aria-describedby="email-description"
                       {...field}
@@ -85,7 +102,7 @@ export function SignInForm() {
                     <Input
                       placeholder="Minimum 8 znaków"
                       type="password"
-                      disabled={isLoading}
+                      disabled={isBusy}
                       data-testid="password-input"
                       aria-describedby="password-description"
                       {...field}
@@ -102,10 +119,11 @@ export function SignInForm() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
-              data-testid="submit-button"
+              disabled={isBusy || hasEmptyFields}
+              data-testid="login-submit"
+              aria-busy={isBusy ? "true" : "false"}
             >
-              {isLoading ? "Logowanie..." : "Zaloguj się"}
+              {isBusy ? "Logowanie..." : "Zaloguj się"}
             </Button>
           </form>
         </Form>

@@ -1,4 +1,21 @@
-import { test as base, expect } from '@playwright/test';
+/**
+ * Custom setup for Playwright tests
+ * 
+ * This file helps isolate Playwright's testing environment from Vitest
+ * to prevent conflicts between their respective expect implementations.
+ */
+
+import { test as baseTest, expect } from '@playwright/test';
+import { resolve as _resolve } from 'path';
+import { register } from 'tsconfig-paths';
+
+// Register path aliases
+register({
+  baseUrl: '.',
+  paths: {
+    '@/*': ['./src/*']
+  }
+});
 
 // Cookie names from src/db/supabase.client.ts
 const _AUTH_COOKIE_NAMES = {
@@ -41,7 +58,7 @@ type TestFixtures = {
 };
 
 // Extend the base test with custom fixtures
-export const test = base.extend<TestFixtures>({
+export const test = baseTest.extend<TestFixtures>({
   isAuthenticated: [false, { option: true }],
   
   context: async ({ context }, use) => {
@@ -58,74 +75,96 @@ export const test = base.extend<TestFixtures>({
     // Set longer navigation timeouts
     page.setDefaultNavigationTimeout(60000);
     
+    // Set test mode header for all requests
+    await page.setExtraHTTPHeaders({
+      'x-test-mode': 'true'
+    });
+    
     if (isAuthenticated) {
-      // Logowanie poprzez dodanie ciasteczek i localStorage
+      // Navigate to the app domain first to avoid security errors
       await page.goto('/');
       
-      await page.evaluate(() => {
-        // Dodaj dane autoryzacyjne do localStorage
-        localStorage.setItem('sb-access-token', 'test-access-token');
-        localStorage.setItem('sb-refresh-token', 'test-refresh-token');
-        localStorage.setItem('supabase-auth-token', JSON.stringify({
-          access_token: 'test-access-token',
-          refresh_token: 'test-refresh-token'
-        }));
-        
-        // Dodaj ciasteczka
-        document.cookie = 'sb-access-token=test-access-token; path=/';
-        document.cookie = 'sb-refresh-token=test-refresh-token; path=/';
-        
-        // Dodaj dane użytkownika
-        localStorage.setItem('user', JSON.stringify({
-          id: 'test-user-id',
-          email: 'test@example.com'
-        }));
-        
-        console.log('Test setup: authentication data added');
+      // Create auth-related cookies
+      const mockSession = {
+        access_token: 'test-access-token',
+        refresh_token: 'test-refresh-token',
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        token_type: 'bearer',
+        user: { 
+          id: 'test-user-id', 
+          email: 'test@example.com',
+          aud: 'authenticated',
+          role: 'authenticated'
+        }
+      };
+      
+      // Set cookies directly rather than using localStorage
+      await page.context().addCookies([
+        {
+          name: 'sb-access-token',
+          value: mockSession.access_token,
+          domain: 'localhost',
+          path: '/',
+          httpOnly: false,
+          secure: false
+        },
+        {
+          name: 'sb-refresh-token',
+          value: mockSession.refresh_token,
+          domain: 'localhost',
+          path: '/',
+          httpOnly: false,
+          secure: false
+        }
+      ]);
+      
+      // Set up API mocking
+      await page.route('**/rest/v1/flashcards**', route => {
+        if (route.request().method() === 'GET') {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify([
+              { 
+                id: '1', 
+                front: 'Test Front 1', 
+                back: 'Test Back 1',
+                created_at: new Date().toISOString(),
+                user_id: 'test-user-id' 
+              },
+              { 
+                id: '2', 
+                front: 'Test Front 2', 
+                back: 'Test Back 2',
+                created_at: new Date().toISOString(),
+                user_id: 'test-user-id' 
+              }
+            ])
+          });
+        }
+        return route.continue();
       });
       
-      // Mock API odpowiedzi na zapytania o sesję i użytkownika
-      await page.route('**/api/auth/session', route => {
-        route.fulfill({
+      await page.route('**/auth/v1/user', route => {
+        return route.fulfill({
           status: 200,
-          body: JSON.stringify({
-            user: { 
-              id: 'test-user-id', 
-              email: 'test@example.com' 
-            },
-            session: {
-              access_token: 'test-access-token',
-              refresh_token: 'test-refresh-token',
-              expires_in: 3600
-            }
-          })
-        });
-      });
-      
-      await page.route('**/api/users/me', route => {
-        route.fulfill({
-          status: 200,
+          contentType: 'application/json',
           body: JSON.stringify({
             id: 'test-user-id',
-            email: 'test@example.com'
+            email: 'test@example.com',
+            aud: 'authenticated',
+            role: 'authenticated'
           })
         });
-      });
-      
-      // Dodajemy też mockowanie endpointów flashcards
-      await page.route('**/api/flashcards', route => {
-        if (route.request().method() === 'GET') {
-          route.fulfill({
-            status: 200,
-            body: JSON.stringify({ flashcards: [] })
-          });
-        } else {
-          route.continue();
-        }
       });
     }
     await use(page);
   },
 });
 
-export { expect }; 
+export { expect };
+
+// Setup function to be called at the beginning of each test file
+export function setupTestEnvironment() {
+  // No need to do anything here as test-environment.ts handles it
+} 

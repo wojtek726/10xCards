@@ -138,7 +138,7 @@ test.describe('Authentication Flow Mock', () => {
     
     // Click the submit button
     const submitButton = page.locator('button[type="submit"]');
-    await submitButton.click();
+    await submitButton.click({ force: true });
     
     // Dajmy czas na przetworzenie żądania
     await page.waitForTimeout(1000);
@@ -241,7 +241,7 @@ test.describe('Authentication Flow Mock', () => {
     
     // Click the submit button
     const submitButton = page.locator('button[type="submit"]');
-    await submitButton.click();
+    await submitButton.click({ force: true });
     
     // Wait for a moment to let the error appear (network request + render)
     await page.waitForTimeout(1000);

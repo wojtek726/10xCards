@@ -3,7 +3,6 @@ import type { Database } from "../../db/database.types";
 import type {
   CreateFlashcardCommandDTO,
   FlashcardDTO,
-  UpdateFlashcardCommandDTO,
   PaginationDTO,
 } from "../../types";
 import { logger } from './logger.service';
@@ -38,62 +37,81 @@ export class FlashcardService {
   }
 
   async updateFlashcard(
+    id: string,
     userId: string,
-    flashcardId: string,
-    command: UpdateFlashcardCommandDTO
-  ): Promise<FlashcardDTO> {
-    // Najpierw sprawdzamy, czy fiszka należy do użytkownika
-    const { data: existingCard, error: fetchError } = await this.supabase
-      .from("flashcards")
-      .select()
-      .eq("id", flashcardId)
-      .eq("user_id", userId)
+    data: { front: string; back: string }
+  ): Promise<FlashcardDTO | null> {
+    // First, get the current flashcard to check its card_origin
+    const { data: currentFlashcard, error: fetchError } = await this.supabase
+      .from('flashcards')
+      .select('card_origin')
+      .eq('id', id)
+      .eq('user_id', userId)
       .single();
 
-    if (fetchError || !existingCard) {
-      throw new Error("Flashcard not found or access denied");
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        logger.info('Flashcard not found:', { flashcardId: id, userId });
+        throw fetchError;
+      }
+      logger.error('Error fetching flashcard:', { error: fetchError, flashcardId: id, userId });
+      throw fetchError;
     }
 
-    // Jeśli fiszka była wygenerowana przez AI i jest modyfikowana, zmieniamy jej pochodzenie
-    const card_origin =
-      existingCard.card_origin === "ai" ? "ai_modified" : existingCard.card_origin;
-
-    const { data, error } = await this.supabase
-      .from("flashcards")
-      .update({
-        ...command,
-        card_origin,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", flashcardId)
-      .eq("user_id", userId)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to update flashcard: ${error.message}`);
+    // Determine if we need to update the card_origin
+    let card_origin = currentFlashcard.card_origin;
+    if (card_origin === 'ai') {
+      card_origin = 'ai_modified';
     }
 
-    return {
-      id: data.id,
-      front: data.front,
-      back: data.back,
-      card_origin: data.card_origin,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-    };
+    try {
+      const { data: updatedFlashcard, error } = await this.supabase
+        .from('flashcards')
+        .update({
+          front: data.front,
+          back: data.back,
+          card_origin: card_origin,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          logger.info('Flashcard not found:', { flashcardId: id, userId });
+          throw error;
+        }
+        logger.error('Error updating flashcard:', { error, flashcardId: id, userId });
+        throw error;
+      }
+
+      logger.info('Flashcard updated:', { flashcardId: id, userId });
+      return updatedFlashcard;
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
+        logger.info('Flashcard not found:', { flashcardId: id, userId });
+        throw error;
+      }
+      logger.error('Error updating flashcard:', { error, flashcardId: id, userId });
+      throw error;
+    }
   }
 
-  async deleteFlashcard(userId: string, flashcardId: string): Promise<void> {
+  async deleteFlashcard(id: string, userId: string): Promise<boolean> {
     const { error } = await this.supabase
-      .from("flashcards")
+      .from('flashcards')
       .delete()
-      .eq("id", flashcardId)
-      .eq("user_id", userId);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) {
-      throw new Error(`Failed to delete flashcard: ${error.message}`);
+      logger.error('Error deleting flashcard:', { error, flashcardId: id, userId });
+      return false;
     }
+
+    return true;
   }
 
   async getFlashcard(userId: string, flashcardId: string): Promise<FlashcardDTO | null> {

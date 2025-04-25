@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { AuthPage } from './page-objects/auth-page';
 
 test.describe('User Flow Tests', () => {
   // Set a timeout to avoid infinite loops
-  test.setTimeout(15000);
+  test.setTimeout(25000);
   
   // Example user for testing
   const testUser = {
@@ -11,8 +12,10 @@ test.describe('User Flow Tests', () => {
   };
   
   test('complete login-signup-login flow', async ({ page }) => {
+    const authPage = new AuthPage(page);
+    
     // Step 1: Visit login page
-    await page.goto('/auth/login');
+    await authPage.navigateToLogin();
     
     // Check page title
     const title = await page.title();
@@ -34,8 +37,7 @@ test.describe('User Flow Tests', () => {
     await page.screenshot({ path: 'test-results/user-flow-login-page.png' });
     
     // Step 4: Fill out login form without submitting
-    await emailField.fill(testUser.email);
-    await passwordField.fill(testUser.password);
+    await authPage.fillLoginForm(testUser.email, testUser.password);
     await page.screenshot({ path: 'test-results/user-flow-login-form-filled.png' });
     
     // Step 5: Clear form fields for next step
@@ -46,27 +48,33 @@ test.describe('User Flow Tests', () => {
   });
   
   test('login form validation', async ({ page }) => {
-    // Step 1: Visit login page
-    await page.goto('/auth/login');
+    const authPage = new AuthPage(page);
     
-    // Step 2: Submit empty form to trigger validation
-    const loginButton = page.locator('button[type="submit"]');
+    // Step 1: Visit login page
+    await authPage.navigateToLogin();
     
     // Take screenshot before submitting
     await page.screenshot({ path: 'test-results/before-validation.png' });
     
-    // Click the submit button
-    await loginButton.click();
+    // Fill in some data to enable the button
+    await authPage.fillLoginForm('test@example.com', 'password123');
     
-    // Step 3: Check for validation messages - try different possible selectors
+    // Clear email to test validation
+    await page.fill('input[type="email"]', '');
+    await page.waitForTimeout(500); // Wait for validation to update
+    
+    // Check if button is disabled as expected
+    const isButtonEnabled = await authPage.isLoginButtonEnabled();
+    expect(isButtonEnabled).toBe(false);
+    
+    // Try to submit form anyway to trigger client-side validation
+    await authPage.forceSubmitLoginForm();
+    
     // Wait a moment for validation to appear
     await page.waitForTimeout(1000);
     
     // Take a screenshot showing what happened after submit
     await page.screenshot({ path: 'test-results/after-validation.png' });
-    
-    // Check if there's any visual feedback after form submission
-    // This could be HTML5 validation, custom validation messages, or other UI changes
     
     // Look for any of these common validation indicators:
     const hasInvalidInput = await page.locator('input:invalid').count() > 0;

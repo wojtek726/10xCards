@@ -5,21 +5,52 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { authSchemas } from "@/lib/validation/auth.schema";
 import { AuthService } from "@/lib/services/auth.service";
 import { useAuthForm } from "@/hooks/useAuthForm";
+import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 
 type FormValues = z.infer<typeof authSchemas.signup>;
 
 export default function SignUpForm() {
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
   const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
     schema: authSchemas.signup,
     onSubmit: async (data) => {
-      await AuthService.signUp({
-        email: data.email,
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-      });
+      try {
+        await AuthService.signUp({
+          email: data.email,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+        });
+        
+        // Get redirect URL from query parameters
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('redirectTo') || '/flashcards';
+        
+        // Set redirecting state to show loading in the UI
+        setIsRedirecting(true);
+        
+        // Wait for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Force page reload to ensure new session is loaded
+        window.location.href = redirectTo;
+      } catch (error) {
+        // Error is handled by useAuthForm
+      }
     },
   });
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.classList.add('has-mounted');
+    }
+  }, []);
+
+  const hasEmptyFields = !form.getValues('email') || !form.getValues('password') || !form.getValues('confirmPassword');
+  const isBusy = isLoading || isRedirecting;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -28,9 +59,9 @@ export default function SignUpForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="register-form">
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="register-form" ref={formRef}>
             {error && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
               </div>
             )}
@@ -45,7 +76,7 @@ export default function SignUpForm() {
                     <Input
                       placeholder="twoj@email.com"
                       type="email"
-                      disabled={isLoading}
+                      disabled={isBusy}
                       data-testid="email-input"
                       {...field}
                     />
@@ -65,7 +96,7 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Minimum 8 znaków"
                       type="password"
-                      disabled={isLoading}
+                      disabled={isBusy}
                       data-testid="password-input"
                       {...field}
                     />
@@ -85,7 +116,7 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Powtórz hasło"
                       type="password"
-                      disabled={isLoading}
+                      disabled={isBusy}
                       data-testid="confirm-password-input"
                       {...field}
                     />
@@ -98,10 +129,11 @@ export default function SignUpForm() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
-              data-testid="submit-button"
+              disabled={isBusy || hasEmptyFields}
+              data-testid="register-submit"
+              aria-busy={isBusy ? "true" : "false"}
             >
-              {isLoading ? "Tworzenie konta..." : "Zarejestruj się"}
+              {isBusy ? "Tworzenie konta..." : "Zarejestruj się"}
             </Button>
           </form>
         </Form>

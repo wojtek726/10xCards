@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
-import { createSupabaseServerInstance, AUTH_COOKIE_NAMES } from "./db/supabase.client";
+import { createSupabaseServerInstance, AUTH_COOKIE_NAMES } from "../db/supabase.client";
 import type { User } from '@supabase/supabase-js';
-import { logger } from './lib/services/logger.service';
+import { logger } from '../lib/services/logger.service';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, cookies, locals } = context;

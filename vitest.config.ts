@@ -10,42 +10,34 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    include: ['src/**/*.test.ts'],
     exclude: ['e2e/**/*'],
+    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
     globals: true,
     environment: 'node',
     setupFiles: ['src/test/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        '.astro/',
-        'dist/',
-        'tests/setup.ts',
-        'e2e/**',
-        'playwright-report/**',
-        'tests-examples/**',
-        'src/pages/**',
-        'src/layouts/**',
-        'src/db/**',
-        'src/hooks/**',
-        'src/components/auth/**',
-        'src/components/navigation/**',
-        'src/mocks/**'
-      ],
+      all: true,
       include: [
-        'src/components/flashcards/**',
-        'src/lib/utils.ts',
-        'src/components/ui/form.tsx',
-        'src/components/ui/button.tsx'
+        'src/**/*.{ts,tsx}',
+        'src/lib/**/*.{ts,tsx}',
+        'src/components/**/*.{ts,tsx}',
       ],
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/*.d.ts',
+        '**/__tests__/**',
+        'src/test/**',
+        'src/env.d.ts',
+      ],
+      reporter: ['text', 'html', 'clover', 'json-summary'],
       thresholds: {
         lines: 80,
         functions: 80,
         branches: 70,
-        statements: 80
-      }
+        statements: 80,
+      },
     }
   },
   resolve: {

@@ -1,0 +1,514 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/middleware/index.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/middleware</a> index.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/102</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/102</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { defineMiddleware } from "astro:middleware";<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cstat-no" title="statement not covered" >import { createSupabaseServerInstance, AUTH_COOKIE_NAMES } from "../db/supabase.client";</span>
+import type { User } from '@supabase/supabase-js';
+<span class="cstat-no" title="statement not covered" >import { logger } from '../lib/services/logger.service';</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >export const onRequest = defineMiddleware(async (context, next) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const { request, cookies, locals } = context;</span>
+<span class="cstat-no" title="statement not covered" >  const url = new URL(request.url);</span>
+  
+  // Bypass authentication checks for test mode 
+<span class="cstat-no" title="statement not covered" >  const isTestMode = url.searchParams.has('test') || request.headers.get('x-test-mode') === 'true';</span>
+<span class="cstat-no" title="statement not covered" >  if (isTestMode) {</span>
+<span class="cstat-no" title="statement not covered" >    logger.debug(`[Middleware] Test mode detected, bypassing auth checks`);</span>
+    // Use mock user in test mode
+<span class="cstat-no" title="statement not covered" >    locals.user = {</span>
+<span class="cstat-no" title="statement not covered" >      id: 'test-user-id',</span>
+<span class="cstat-no" title="statement not covered" >      email: 'test@example.com',</span>
+<span class="cstat-no" title="statement not covered" >      role: 'authenticated',</span>
+<span class="cstat-no" title="statement not covered" >      aud: 'authenticated',</span>
+<span class="cstat-no" title="statement not covered" >      app_metadata: { provider: 'email' },</span>
+<span class="cstat-no" title="statement not covered" >      user_metadata: {}</span>
+<span class="cstat-no" title="statement not covered" >    } as User;</span>
+    
+    // Add Supabase instance to locals
+<span class="cstat-no" title="statement not covered" >    locals.supabase = createSupabaseServerInstance({ request, cookies });</span>
+    
+    // Continue to the endpoint without auth checks
+<span class="cstat-no" title="statement not covered" >    return next();</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+  
+  // Sprawdź czy to żądanie jest częścią procesu wylogowania
+<span class="cstat-no" title="statement not covered" >  const isLogoutProcess = url.pathname === '/api/auth/logout' || </span>
+<span class="cstat-no" title="statement not covered" >                          (url.pathname === '/auth/login' &amp;&amp; url.searchParams.has('logout'));</span>
+  
+  // Logowanie podstawowych informacji dla każdego żądania  
+<span class="cstat-no" title="statement not covered" >  logger.debug(`[Middleware] Request to ${url.pathname}${isLogoutProcess ? ' (logout process)' : ''}`);</span>
+<span class="cstat-no" title="statement not covered" >  logger.debug(`[Middleware] Cookie count: ${request.headers.get("cookie")?.split(";").length || 0}`);</span>
+&nbsp;
+  // Utwórz instancję Supabase dla serwera
+<span class="cstat-no" title="statement not covered" >  const supabase = createSupabaseServerInstance({ request, cookies });</span>
+&nbsp;
+  // Inicjalizacja wartości domyślnych
+<span class="cstat-no" title="statement not covered" >  locals.user = undefined;</span>
+<span class="cstat-no" title="statement not covered" >  locals.supabase = supabase;</span>
+&nbsp;
+  // Trasy publiczne, które nie wymagają autoryzacji
+<span class="cstat-no" title="statement not covered" >  const publicRoutes = [</span>
+<span class="cstat-no" title="statement not covered" >    "/auth/login",</span>
+<span class="cstat-no" title="statement not covered" >    "/auth/register",</span>
+<span class="cstat-no" title="statement not covered" >    "/auth/signup",</span>
+<span class="cstat-no" title="statement not covered" >    "/auth/reset-password",</span>
+<span class="cstat-no" title="statement not covered" >    "/api/auth/login",</span>
+<span class="cstat-no" title="statement not covered" >    "/api/auth/signup",</span>
+<span class="cstat-no" title="statement not covered" >    "/api/auth/register",</span>
+<span class="cstat-no" title="statement not covered" >    "/api/auth/reset-password",</span>
+<span class="cstat-no" title="statement not covered" >    "/api/auth/logout",</span>
+<span class="cstat-no" title="statement not covered" >    "/images",</span>
+<span class="cstat-no" title="statement not covered" >    "/css",</span>
+<span class="cstat-no" title="statement not covered" >    "/js",</span>
+<span class="cstat-no" title="statement not covered" >    "/fonts",</span>
+<span class="cstat-no" title="statement not covered" >    "/_astro"</span>
+<span class="cstat-no" title="statement not covered" >  ];</span>
+&nbsp;
+  // Sprawdź, czy bieżąca ścieżka jest publiczna
+<span class="cstat-no" title="statement not covered" >  const isPublicRoute = publicRoutes.some(route =&gt; </span>
+<span class="cstat-no" title="statement not covered" >    url.pathname === route || url.pathname.startsWith(route)</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
+&nbsp;
+  // Waliduj sesję tylko jeśli nie jest to trasa publiczna i nie jest to proces wylogowania
+<span class="cstat-no" title="statement not covered" >  if (!isPublicRoute &amp;&amp; !isLogoutProcess) {</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      // Pobierz sesję z Supabase
+<span class="cstat-no" title="statement not covered" >      logger.debug(`[Middleware] Checking session for ${url.pathname}`);</span>
+      
+      // Sprawdź, czy ciasteczka sesji są obecne
+<span class="cstat-no" title="statement not covered" >      const hasAccessToken = cookies.has(AUTH_COOKIE_NAMES.accessToken);</span>
+<span class="cstat-no" title="statement not covered" >      const hasRefreshToken = cookies.has(AUTH_COOKIE_NAMES.refreshToken);</span>
+<span class="cstat-no" title="statement not covered" >      logger.debug(`[Middleware] Session cookies present: access=${hasAccessToken}, refresh=${hasRefreshToken}`);</span>
+&nbsp;
+      // Pobierz sesję
+<span class="cstat-no" title="statement not covered" >      const { data: { session }, error: sessionError } = await supabase.auth.getSession();</span>
+      
+<span class="cstat-no" title="statement not covered" >      if (sessionError) {</span>
+<span class="cstat-no" title="statement not covered" >        logger.error(`[Middleware] Session error:`, sessionError);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >      if (session) {</span>
+<span class="cstat-no" title="statement not covered" >        logger.debug(`[Middleware] Valid session found, token expires in: ${session.expires_in}s`);</span>
+        
+        // Pobierz dane użytkownika
+<span class="cstat-no" title="statement not covered" >        const { data: { user }, error: userError } = await supabase.auth.getUser();</span>
+        
+<span class="cstat-no" title="statement not covered" >        if (userError) {</span>
+<span class="cstat-no" title="statement not covered" >          logger.error(`[Middleware] User error:`, userError);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+        
+<span class="cstat-no" title="statement not covered" >        if (user) {</span>
+<span class="cstat-no" title="statement not covered" >          logger.debug(`[Middleware] User authenticated: ${user.id} (${user.email})`);</span>
+<span class="cstat-no" title="statement not covered" >          locals.user = user;</span>
+<span class="cstat-no" title="statement not covered" >        } else {</span>
+<span class="cstat-no" title="statement not covered" >          logger.debug(`[Middleware] Session exists but no user found`);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        logger.debug(`[Middleware] No valid session found`);</span>
+        
+        // Jeśli ciasteczka są obecne, ale sesja nie istnieje, spróbuj odświeżyć
+<span class="cstat-no" title="statement not covered" >        if (hasAccessToken &amp;&amp; hasRefreshToken) {</span>
+<span class="cstat-no" title="statement not covered" >          logger.debug(`[Middleware] Attempting to refresh session`);</span>
+<span class="cstat-no" title="statement not covered" >          const refreshToken = cookies.get(AUTH_COOKIE_NAMES.refreshToken)?.value;</span>
+          
+<span class="cstat-no" title="statement not covered" >          if (refreshToken) {</span>
+<span class="cstat-no" title="statement not covered" >            try {</span>
+<span class="cstat-no" title="statement not covered" >              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({</span>
+<span class="cstat-no" title="statement not covered" >                refresh_token: refreshToken</span>
+<span class="cstat-no" title="statement not covered" >              });</span>
+              
+<span class="cstat-no" title="statement not covered" >              if (refreshError) {</span>
+<span class="cstat-no" title="statement not covered" >                logger.error(`[Middleware] Session refresh error:`, refreshError);</span>
+<span class="cstat-no" title="statement not covered" >              } else if (refreshData.session &amp;&amp; refreshData.user) {</span>
+<span class="cstat-no" title="statement not covered" >                logger.debug(`[Middleware] Session refreshed successfully`);</span>
+<span class="cstat-no" title="statement not covered" >                locals.user = refreshData.user;</span>
+<span class="cstat-no" title="statement not covered" >              }</span>
+<span class="cstat-no" title="statement not covered" >            } catch (refreshErr) {</span>
+<span class="cstat-no" title="statement not covered" >              logger.error(`[Middleware] Error during session refresh:`, refreshErr);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+&nbsp;
+      // Przekieruj do logowania jeśli użytkownik nie jest uwierzytelniony i trasa wymaga autoryzacji
+<span class="cstat-no" title="statement not covered" >      if (!locals.user &amp;&amp; !isPublicRoute) {</span>
+<span class="cstat-no" title="statement not covered" >        logger.debug(`[Middleware] Redirecting unauthenticated user from ${url.pathname} to /auth/login`);</span>
+<span class="cstat-no" title="statement not covered" >        return Response.redirect(new URL("/auth/login", request.url), 302);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    } catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error(`[Middleware] Authentication error:`, err);</span>
+<span class="cstat-no" title="statement not covered" >      return Response.redirect(new URL("/auth/login", request.url), 302);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+&nbsp;
+  // Wywołaj kolejne middleware lub handler końcowy
+<span class="cstat-no" title="statement not covered" >  const response = await next();</span>
+<span class="cstat-no" title="statement not covered" >  return response;</span>
+<span class="cstat-no" title="statement not covered" >});</span></pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2025-04-25T10:35:03.015Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

@@ -15,24 +15,23 @@ export class FlashcardsListPage extends BasePage {
 
   async goto() {
     await super.goto('/flashcards');
-    // Ensure authentication is set up properly
     await this.ensureAuthentication();
+    await this.waitForPageLoad();
   }
   
   async navigateToFlashcardsList() {
     await this.goto();
   }
 
+  async clickGenerateNewFlashcards() {
+    await this.generateNewFlashcardsButton.waitFor({ timeout: 30000 });
+    await this.generateNewFlashcardsButton.click();
+    await this.page.waitForURL('/flashcards/generate', { timeout: 30000 });
+  }
+
   async navigateToFlashcardGeneration() {
     try {
-      // First try clicking the button if it exists
-      if (await this.generateNewFlashcardsButton.isVisible({ timeout: 5000 })) {
-        await this.generateNewFlashcardsButton.click();
-        await this.page.waitForURL('/flashcards/generate', { timeout: 10000 });
-      } else {
-        // If button isn't visible, navigate directly
-        await this.page.goto('/flashcards/generate');
-      }
+      await this.clickGenerateNewFlashcards();
     } catch (error) {
       console.warn('Failed to navigate to flashcard generation via button, using direct navigation');
       await this.page.goto('/flashcards/generate');
@@ -58,11 +57,17 @@ export class FlashcardsListPage extends BasePage {
     await flashcard.getByTestId('edit-button').click();
   }
 
-  async waitForFlashcardsList() {
+  async waitForPageLoad() {
     try {
-      await this.flashcardsList.waitFor({ state: 'visible', timeout: 10000 });
+      // Wait for either the flashcards list or empty state message
+      await Promise.race([
+        this.flashcardsList.waitFor({ state: 'visible', timeout: 30000 }),
+        this.page.getByText('Nie masz jeszcze żadnych fiszek').waitFor({ state: 'visible', timeout: 30000 })
+      ]);
     } catch (error) {
-      console.warn('Flashcards list not visible, might be empty state');
+      console.warn('Neither flashcards list nor empty state message is visible');
+      await this.page.screenshot({ path: 'test-results/flashcards-list-not-loaded.png' });
+      throw error;
     }
   }
 } 

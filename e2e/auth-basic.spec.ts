@@ -13,7 +13,7 @@ test.describe('Basic Auth Pages', () => {
     expect(passwordField).toBeTruthy();
     
     // Check if the submit button is present
-    const submitButton = await page.getByTestId('submit-button').isVisible();
+    const submitButton = await page.getByTestId('login-submit').isVisible();
     expect(submitButton).toBeTruthy();
   });
 
@@ -31,7 +31,7 @@ test.describe('Basic Auth Pages', () => {
     expect(confirmPasswordField).toBeTruthy();
     
     // Check if the submit button is present
-    const submitButton = await page.getByTestId('submit-button').isVisible();
+    const submitButton = await page.getByTestId('register-submit').isVisible();
     expect(submitButton).toBeTruthy();
   });
 }); 

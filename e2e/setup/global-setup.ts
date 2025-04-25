@@ -2,6 +2,7 @@ import { chromium } from '@playwright/test';
 import type { FullConfig } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import './test-environment';
 
 /**
  * Global setup for E2E tests
@@ -9,10 +10,7 @@ import * as path from 'path';
  * - Sets up any global state needed for tests
  */
 export default async function globalSetup(_config: FullConfig): Promise<void> {
-  // Prevent conflicts with Vitest's expect
-  const globalAny = global as any;
-  // Save any existing expect
-  const originalExpect = globalAny.expect;
+  console.log('Starting E2E test global setup...');
   
   // Create directories for test artifacts if they don't exist
   const testResultsDir = path.join(process.cwd(), 'test-results');
@@ -36,11 +34,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   
   // Close browser when done
   await browser.close();
-  
-  // Restore the original expect if it was present
-  if (originalExpect) {
-    globalAny.expect = originalExpect;
-  }
   
   console.log('✅ Global setup complete');
 } 

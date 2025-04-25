@@ -16,7 +16,10 @@ export default defineConfig({
     react(),
     sitemap()
   ],
-  server: { port: 3000 },
+  server: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+    host: process.env.RUNNING_E2E ? true : false
+  },
   vite: {
     server: {
       watch: {
@@ -27,6 +30,17 @@ export default defineConfig({
       'PUBLIC_',
       'SUPABASE_'
     ],
+    build: {
+      rollupOptions: {
+        external: [/\.test\.tsx?$/, /\.spec\.tsx?$/, /__tests__/],
+      },
+    },
+    optimizeDeps: {
+      exclude: ['vitest']
+    },
+    define: process.env.RUNNING_E2E ? {
+      'import.meta.vitest': 'undefined',
+    } : {},
   },
   adapter: node({
     mode: "standalone",

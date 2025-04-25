@@ -133,8 +133,7 @@ export function FlashcardsView({ flashcards: initialFlashcards }: FlashcardsView
 
   return (
     <>
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Twoje fiszki</h2>
+      <div className="mb-6 flex justify-end">
         <Button onClick={() => setIsCreateModalOpen(true)} data-testid="create-flashcard-button">
           <Plus className="h-4 w-4 mr-2" />
           Dodaj nową fiszkę

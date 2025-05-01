@@ -17,7 +17,7 @@ export class AuthService {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        login: credentials.email,
+        email: credentials.email,
         password: credentials.password
       }),
     });

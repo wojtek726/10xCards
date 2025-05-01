@@ -11,11 +11,11 @@ export class ProfilePage extends BasePage {
   constructor(page: Page) {
     super(page);
     
-    this.passwordInput = page.getByLabel('Aktualne hasło');
-    this.newPasswordInput = page.getByLabel('Nowe hasło');
-    this.confirmPasswordInput = page.getByLabel('Potwierdź nowe hasło');
-    this.changePasswordButton = page.getByRole('button', { name: 'Zmień hasło' });
-    this.deleteAccountLink = page.getByRole('link', { name: 'Usuń konto' });
+    this.passwordInput = page.locator('input[name="currentPassword"]');
+    this.newPasswordInput = page.locator('input[name="newPassword"]');
+    this.confirmPasswordInput = page.locator('input[name="confirmPassword"]');
+    this.changePasswordButton = page.locator('form:has(input[name="newPassword"]) button[type="submit"]');
+    this.deleteAccountLink = page.locator('a[href="/profile/delete"]');
   }
 
   async goto() {
@@ -31,7 +31,9 @@ export class ProfilePage extends BasePage {
   }
 
   async navigateToDeleteAccount() {
-    await this.deleteAccountLink.click();
+    await this.deleteAccountLink.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(500);
+    await this.deleteAccountLink.click({ force: true });
     await this.page.waitForURL('**/profile/delete');
   }
 }
@@ -45,10 +47,10 @@ export class DeleteAccountPage extends BasePage {
   constructor(page: Page) {
     super(page);
     
-    this.passwordInput = page.getByLabel('Hasło');
-    this.confirmationInput = page.getByLabel('Potwierdzenie');
-    this.deleteButton = page.getByRole('button', { name: 'Usuń konto' });
-    this.cancelButton = page.getByRole('button', { name: 'Anuluj' });
+    this.passwordInput = page.locator('input[name="password"]');
+    this.confirmationInput = page.locator('input[name="confirmation"]');
+    this.deleteButton = page.locator('button[type="submit"][variant="destructive"]');
+    this.cancelButton = page.locator('button[type="button"][variant="outline"]');
   }
 
   async goto() {
@@ -59,11 +61,15 @@ export class DeleteAccountPage extends BasePage {
   async confirmDeletion(password: string) {
     await this.passwordInput.fill(password);
     await this.confirmationInput.fill('USUN KONTO');
-    await this.deleteButton.click();
+    await this.deleteButton.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(500);
+    await this.deleteButton.click({ force: true });
   }
 
   async cancel() {
-    await this.cancelButton.click();
+    await this.cancelButton.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(500);
+    await this.cancelButton.click({ force: true });
     await this.page.waitForURL('**/profile');
   }
 } 

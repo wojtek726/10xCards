@@ -1,4 +1,5 @@
-import { test, expect } from './test-setup';
+import { expect } from '@playwright/test';
+import { test } from './test-setup';
 import { FlashcardGenerationPage } from './page-objects';
 
 test.describe('Flashcard Generation Flow', () => {

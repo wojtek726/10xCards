@@ -1,33 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export interface Database {
-  public: {
-    Tables: {
-      users: {
-        Row: {
-          id: string;
-          login: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          login: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          login?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
-  };
-}
-
-export interface Database {
   graphql_public: {
     Tables: Record<never, never>;
     Views: Record<never, never>;
@@ -90,21 +63,21 @@ export interface Database {
           created_at: string;
           hash_password: string;
           id: string;
-          login: string;
+          email: string;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
           hash_password: string;
           id?: string;
-          login: string;
+          email: string;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           hash_password?: string;
           id?: string;
-          login?: string;
+          email?: string;
           updated_at?: string;
         };
         Relationships: [];

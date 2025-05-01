@@ -31,7 +31,7 @@ export interface RegisterResponseDTO {
 
 // Request DTO for user login.
 export interface LoginRequestDTO {
-  login: string;
+  email: string;
   password: string;
 }
 

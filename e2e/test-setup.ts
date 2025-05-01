@@ -5,9 +5,11 @@
  * to prevent conflicts between their respective expect implementations.
  */
 
-import { test as baseTest, expect } from '@playwright/test';
+import { test as baseTest } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { resolve as _resolve } from 'path';
 import { register } from 'tsconfig-paths';
+import { test as pageTest } from './fixtures/page-objects';
 
 // Register path aliases
 register({
@@ -17,11 +19,10 @@ register({
   }
 });
 
-// Cookie names from src/db/supabase.client.ts
-const _AUTH_COOKIE_NAMES = {
+// Cookie names
+const AUTH_COOKIE_NAMES = {
   accessToken: 'sb-access-token',
-  refreshToken: 'sb-refresh-token',
-  authCookie: 'supabase-auth-token'
+  refreshToken: 'sb-refresh-token'
 };
 
 // Test user data
@@ -32,137 +33,113 @@ const TEST_USER = {
   refresh_token: 'test-refresh-token'
 };
 
-// Add explicit mock for API call to get user
-const mockUserApiResponse = {
-  id: TEST_USER.id,
-  email: TEST_USER.email,
-  aud: 'authenticated',
-  role: 'authenticated',
-  app_metadata: { provider: 'email' },
-  user_metadata: {},
-  created_at: new Date().toISOString()
-};
-
-// Mock for session response
-const _mockSessionResponse = {
+// Mock session data
+const mockSession = {
   access_token: TEST_USER.access_token,
   refresh_token: TEST_USER.refresh_token,
   expires_in: 3600,
   expires_at: Math.floor(Date.now() / 1000) + 3600,
-  token_type: 'bearer',
-  user: mockUserApiResponse
+  user: {
+    id: TEST_USER.id,
+    email: TEST_USER.email
+  }
 };
 
 type TestFixtures = {
   isAuthenticated: boolean;
 };
 
-// Extend the base test with custom fixtures
-export const test = baseTest.extend<TestFixtures>({
-  isAuthenticated: [false, { option: true }],
+// Extend the base test with custom fixtures and page objects
+export const test = pageTest.extend<TestFixtures>({
+  isAuthenticated: false,
   
   context: async ({ context }, use) => {
-    // Set longer timeouts for all actions
-    context.setDefaultTimeout(60000); // 60 seconds timeout for all actions
-    
-    // Grant specific permissions (clipboard access seems reasonable for tests)
-    // If localStorage access is needed, consider saving/loading storage state instead.
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:3000' });
+    // Set timeouts for all actions
+    context.setDefaultTimeout(10000);
     await use(context);
   },
 
   page: async ({ page, isAuthenticated }, use) => {
-    // Set longer navigation timeouts
-    page.setDefaultNavigationTimeout(60000);
-    
-    // Set test mode header for all requests
-    await page.setExtraHTTPHeaders({
-      'x-test-mode': 'true'
-    });
+    // Set navigation timeouts
+    page.setDefaultNavigationTimeout(10000);
+    page.setDefaultTimeout(10000);
     
     if (isAuthenticated) {
-      // Navigate to the app domain first to avoid security errors
+      // Navigate to the app domain first
       await page.goto('/');
       
-      // Create auth-related cookies
-      const mockSession = {
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token',
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
-        token_type: 'bearer',
-        user: { 
-          id: 'test-user-id', 
-          email: 'test@example.com',
-          aud: 'authenticated',
-          role: 'authenticated'
-        }
-      };
-      
-      // Set cookies directly rather than using localStorage
+      // Set auth cookies
       await page.context().addCookies([
         {
-          name: 'sb-access-token',
+          name: AUTH_COOKIE_NAMES.accessToken,
           value: mockSession.access_token,
           domain: 'localhost',
           path: '/',
-          httpOnly: false,
-          secure: false
+          httpOnly: true,
+          secure: true,
+          sameSite: 'Lax'
         },
         {
-          name: 'sb-refresh-token',
+          name: AUTH_COOKIE_NAMES.refreshToken,
           value: mockSession.refresh_token,
           domain: 'localhost',
           path: '/',
-          httpOnly: false,
-          secure: false
+          httpOnly: true,
+          secure: true,
+          sameSite: 'Lax'
         }
       ]);
-      
-      // Set up API mocking
-      await page.route('**/rest/v1/flashcards**', route => {
+
+      // Mock auth endpoints
+      await page.route('**/api/auth/session', route => {
+        route.fulfill({
+          status: 200,
+          body: JSON.stringify(mockSession)
+        });
+      });
+
+      await page.route('**/api/users/me', route => {
+        route.fulfill({
+          status: 200,
+          body: JSON.stringify({
+            id: TEST_USER.id,
+            email: TEST_USER.email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        });
+      });
+
+      // Mock flashcards endpoint
+      await page.route('**/api/flashcards', route => {
         if (route.request().method() === 'GET') {
-          return route.fulfill({
+          route.fulfill({
             status: 200,
-            contentType: 'application/json',
             body: JSON.stringify([
-              { 
-                id: '1', 
-                front: 'Test Front 1', 
+              {
+                id: '1',
+                front: 'Test Front 1',
                 back: 'Test Back 1',
                 created_at: new Date().toISOString(),
-                user_id: 'test-user-id' 
+                user_id: TEST_USER.id
               },
-              { 
-                id: '2', 
-                front: 'Test Front 2', 
+              {
+                id: '2',
+                front: 'Test Front 2',
                 back: 'Test Back 2',
                 created_at: new Date().toISOString(),
-                user_id: 'test-user-id' 
+                user_id: TEST_USER.id
               }
             ])
           });
+        } else {
+          route.continue();
         }
-        return route.continue();
-      });
-      
-      await page.route('**/auth/v1/user', route => {
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 'test-user-id',
-            email: 'test@example.com',
-            aud: 'authenticated',
-            role: 'authenticated'
-          })
-        });
       });
     }
     await use(page);
   },
 });
-
-export { expect };
 
 // Setup function to be called at the beginning of each test file
 export function setupTestEnvironment() {

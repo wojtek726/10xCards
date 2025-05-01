@@ -24,9 +24,9 @@ export class FlashcardsListPage extends BasePage {
   }
 
   async clickGenerateNewFlashcards() {
-    await this.generateNewFlashcardsButton.waitFor({ timeout: 30000 });
+    await this.generateNewFlashcardsButton.waitFor({ timeout: 10000 });
     await this.generateNewFlashcardsButton.click();
-    await this.page.waitForURL('/flashcards/generate', { timeout: 30000 });
+    await this.page.waitForURL('/flashcards/generate', { timeout: 10000 });
   }
 
   async navigateToFlashcardGeneration() {

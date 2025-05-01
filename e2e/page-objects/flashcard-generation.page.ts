@@ -28,12 +28,12 @@ export class FlashcardGenerationPage extends BasePage {
   }
 
   async enterText(text: string) {
-    await this.textInput.waitFor({ timeout: 30000 });
+    await this.textInput.waitFor({ timeout: 10000 });
     await this.textInput.fill(text);
   }
 
   async clickGenerate() {
-    await this.generateButton.waitFor({ timeout: 30000 });
+    await this.generateButton.waitFor({ timeout: 10000 });
     
     // Check if button is disabled
     const isDisabled = await this.generateButton.isDisabled();
@@ -43,11 +43,11 @@ export class FlashcardGenerationPage extends BasePage {
       console.log('Generate button is disabled, entering text to enable it');
       await this.enterText('Test text for E2E test');
       // Give time for the UI to update
-      await this.page.waitForTimeout(500);
+      await this.page.waitForTimeout(100);
     }
     
     // Wait for button to be enabled
-    await expect(this.generateButton).toBeEnabled({ timeout: 30000 });
+    await expect(this.generateButton).toBeEnabled({ timeout: 10000 });
     await this.generateButton.click();
   }
 
@@ -96,11 +96,11 @@ export class FlashcardGenerationPage extends BasePage {
   }
 
   async waitForGenerationForm() {
-    await this.generationForm.waitFor({ timeout: 30000 });
+    await this.generationForm.waitFor({ timeout: 10000 });
   }
 
   async isGenerationFormVisible() {
-    return this.generationForm.isVisible({ timeout: 30000 });
+    return this.generationForm.isVisible({ timeout: 10000 });
   }
 
   getErrorMessage() {

@@ -9,10 +9,15 @@ import { AuthService } from "@/lib/services/auth.service";
 import { useAuthForm } from "@/hooks/useAuthForm";
 import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
+import { useHydration, useFormMounting } from "@/hooks/useHydration";
 
 type FormValues = z.infer<typeof authSchemas.login>;
 
-export function SignInForm() {
+interface SignInFormProps {
+  redirectTo?: string;
+}
+
+export function SignInForm({ redirectTo = '' }: SignInFormProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
@@ -25,9 +30,12 @@ export function SignInForm() {
       try {
         await AuthService.signIn(data);
         
-        // Get redirect URL from query parameters
-        const params = new URLSearchParams(window.location.search);
-        const redirectTo = params.get('redirectTo') || '/flashcards';
+        // Użyj przekazanego redirectTo lub pobierz z parametrów URL
+        let destination = redirectTo;
+        if (!destination) {
+          const params = new URLSearchParams(window.location.search);
+          destination = params.get('redirect') || params.get('redirectTo') || '/flashcards';
+        }
         
         // Set redirecting state to show loading in the UI
         setIsRedirecting(true);
@@ -36,7 +44,7 @@ export function SignInForm() {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Force page reload to ensure new session is loaded
-        window.location.href = redirectTo;
+        window.location.href = destination;
       } catch (error) {
         // Error is handled by useAuthForm
       }
@@ -45,10 +53,16 @@ export function SignInForm() {
 
   const formRef = useRef<HTMLFormElement>(null);
 
+  useHydration();
+  useFormMounting(formRef);
+
   useEffect(() => {
-    if (formRef.current) {
-      formRef.current.classList.add('has-mounted');
-    }
+    // Add hydration marker to root element
+    document.documentElement.setAttribute('data-hydrated', 'true');
+    
+    return () => {
+      document.documentElement.removeAttribute('data-hydrated');
+    };
   }, []);
 
   const hasEmptyFields = !form.getValues('email') || !form.getValues('password');
@@ -61,7 +75,13 @@ export function SignInForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form" ref={formRef}>
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-4" 
+            data-testid="login-form" 
+            ref={formRef}
+            aria-busy={isBusy}
+          >
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
@@ -121,7 +141,6 @@ export function SignInForm() {
               className="w-full" 
               disabled={isBusy || hasEmptyFields}
               data-testid="login-submit"
-              aria-busy={isBusy ? "true" : "false"}
             >
               {isBusy ? "Logowanie..." : "Zaloguj się"}
             </Button>

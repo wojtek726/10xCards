@@ -7,6 +7,7 @@ import { AuthService } from "@/lib/services/auth.service";
 import { useAuthForm } from "@/hooks/useAuthForm";
 import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
+import { useHydration, useFormMounting } from "@/hooks/useHydration";
 
 type FormValues = z.infer<typeof authSchemas.signup>;
 
@@ -43,10 +44,16 @@ export default function SignUpForm() {
 
   const formRef = useRef<HTMLFormElement>(null);
 
+  useHydration();
+  useFormMounting(formRef);
+
   useEffect(() => {
-    if (formRef.current) {
-      formRef.current.classList.add('has-mounted');
-    }
+    // Add hydration marker to root element
+    document.documentElement.setAttribute('data-hydrated', 'true');
+    
+    return () => {
+      document.documentElement.removeAttribute('data-hydrated');
+    };
   }, []);
 
   const hasEmptyFields = !form.getValues('email') || !form.getValues('password') || !form.getValues('confirmPassword');
@@ -59,7 +66,13 @@ export default function SignUpForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="register-form" ref={formRef}>
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-4" 
+            data-testid="register-form" 
+            ref={formRef}
+            aria-busy={isBusy}
+          >
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
@@ -131,7 +144,6 @@ export default function SignUpForm() {
               className="w-full" 
               disabled={isBusy || hasEmptyFields}
               data-testid="register-submit"
-              aria-busy={isBusy ? "true" : "false"}
             >
               {isBusy ? "Tworzenie konta..." : "Zarejestruj się"}
             </Button>

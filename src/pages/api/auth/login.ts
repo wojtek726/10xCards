@@ -5,14 +5,19 @@ import { logger } from '../../../lib/services/logger.service';
 export const POST: APIRoute = async ({ request, cookies }) => {
   logger.info("Login API endpoint started");
   try {
-    const { login, password } = await request.json();
-    logger.info("Received login request for email:", login);
+    const body = await request.json();
+    logger.info("Received login request body:", body);
+    const { email, password } = body;
+    logger.info("Extracted email and password from request");
 
     const supabase = createSupabaseServerInstance({ request, cookies });
+    
+    // Dodajemy log przed wywołaniem signInWithPassword
+    logger.info("Attempting to sign in with Supabase auth using email:", email);
 
     // 1. Logujemy użytkownika używając pełnego adresu email
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: login,
+      email,
       password,
     });
 
@@ -51,17 +56,31 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Jeśli nie ma wpisu w public.users lub wystąpił błąd "not found", tworzymy go
     if (!userData || (userError && userError.code === "PGRST116")) {
-      logger.info("Creating new user record in database:", {
+      logger.info("No existing user record found in database, creating new one:", {
         id: authData.user.id,
-        email: login,
+        email: email,
       });
+      
+      logger.debug("User data from auth:", authData.user);
+      if (userError) {
+        logger.debug("User error from database query:", userError);
+      }
 
-      await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from("users")
         .insert({
           id: authData.user.id,
-          email: login,
-        });
+          email: email,
+        })
+        .select();
+        
+      if (insertError) {
+        logger.error("Error inserting user record:", insertError);
+      } else {
+        logger.info("Successfully created user record:", insertData);
+      }
+    } else {
+      logger.info("Existing user record found:", userData);
     }
 
     // 3. Ręcznie ustawiamy ciasteczka sesji

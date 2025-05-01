@@ -97,6 +97,61 @@ export const onRequest = defineMiddleware(async (context, next) => {
         
         if (userError) {
           logger.error(`[Middleware] User error:`, userError);
+          
+          // Sprawdź, czy to błąd nieistniejącego użytkownika
+          if (userError.message && userError.message.includes('User from sub claim in JWT does not exist')) {
+            logger.warn(`[Middleware] Token JWT odnosi się do użytkownika, który nie istnieje. Czyszczenie ciasteczek sesji.`);
+            
+            // Lista wszystkich możliwych ciasteczek Supabase
+            const cookiesToDelete = [
+              AUTH_COOKIE_NAMES.accessToken,
+              AUTH_COOKIE_NAMES.refreshToken,
+              AUTH_COOKIE_NAMES.authCookie,
+              'sb-access-token',
+              'sb-refresh-token',
+              'supabase-auth-token',
+              'sb-127-auth-token',
+              'sb-localhost-auth-token',
+              'sb-127-auth-token-code-verifier',
+              'sb-localhost-auth-token-code-verifier'
+            ];
+            
+            // Wyczyść ciasteczka z różnymi opcjami ścieżek i domen
+            cookiesToDelete.forEach(name => {
+              // Standardowe usunięcie
+              cookies.delete(name, { path: '/' });
+              
+              // Próba z innymi opcjami
+              cookies.delete(name, { path: '/auth' });
+              cookies.delete(name, { path: '/' });
+              
+              // Wymuś wygaśnięcie przez ustawienie pustej wartości i daty wygaśnięcia w przeszłości
+              cookies.set(name, '', {
+                path: '/',
+                expires: new Date(0),
+                maxAge: 0
+              });
+            });
+            
+            // Zmodyfikuj odpowiedź, aby dodać nagłówki Set-Cookie kasujące ciasteczka
+            const clearingHeaders = new Headers();
+            clearingHeaders.append('Content-Type', 'text/html');
+            
+            // Dodaj nagłówki Set-Cookie z wartością pustą i wygasłą datą
+            cookiesToDelete.forEach(name => {
+              clearingHeaders.append('Set-Cookie', 
+                `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax`);
+            });
+            
+            // Przekieruj z powrotem na stronę logowania z odpowiednimi nagłówkami czyszczącymi
+            return new Response('', {
+              status: 302,
+              headers: new Headers({
+                'Location': new URL(`/auth/login?error=session_expired&nocache=${Date.now()}`, request.url).toString(),
+                ...Object.fromEntries(clearingHeaders.entries())
+              })
+            });
+          }
         }
         
         if (user) {

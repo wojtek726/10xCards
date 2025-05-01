@@ -1,19 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthService } from '../auth.service';
 import { logger } from '@/lib/utils/logger';
-import { supabaseClient } from '@/db/supabase.client';
 
-// Mock the Supabase client
+// Mock the supabase client module
 vi.mock('@/db/supabase.client', () => ({
   supabaseClient: {
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-      signInWithPassword: vi.fn(),
-      updateUser: vi.fn(),
-      admin: {
-        deleteUser: vi.fn()
-      }
     }
+  },
+  createSupabaseServerInstance: vi.fn(),
+  cookieOptions: {
+    path: "/",
+    secure: false,
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7
   }
 }));
 
@@ -31,21 +33,10 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('AuthService', () => {
-  const mockSession = {
-    user: {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      created_at: new Date().toISOString()
-    }
-  };
-
   beforeEach(() => {
     // Reset all mocks
     vi.resetAllMocks();
     mockFetch.mockReset();
-
-    // Mock the getSession method to return a session by default
-    vi.spyOn(AuthService, 'getSession').mockResolvedValue(mockSession as any);
   });
 
   afterEach(() => {
@@ -58,110 +49,86 @@ describe('AuthService', () => {
       const currentPassword = 'current-password';
       const newPassword = 'new-password';
       
-      // Mock successful signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: { session: mockSession },
-        error: null
-      } as any);
-      
-      // Mock successful updateUser
-      vi.mocked(supabaseClient.auth.updateUser).mockResolvedValue({
-        data: { user: mockSession.user },
-        error: null
-      } as any);
+      // Mock successful API call
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true })
+      });
       
       // Act
       const result = await AuthService.changePassword(currentPassword, newPassword);
       
       // Assert
       expect(result).toBe(true);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: mockSession.user.email,
-        password: currentPassword
-      });
-      expect(supabaseClient.auth.updateUser).toHaveBeenCalledWith({
-        password: newPassword
-      });
-      expect(logger.info).toHaveBeenCalledWith(
-        "Hasło użytkownika zostało zmienione",
-        { userId: mockSession.user.id }
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/auth/password",
+        expect.objectContaining({
+          method: "PUT",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json"
+          }),
+          body: JSON.stringify({
+            currentPassword,
+            newPassword
+          })
+        })
       );
+      expect(logger.info).toHaveBeenCalledWith("Hasło użytkownika zostało zmienione pomyślnie");
     });
     
-    it('should fail to change password when current password is incorrect', async () => {
+    it('should fail to change password when API returns error', async () => {
       // Arrange
       const currentPassword = 'wrong-password';
       const newPassword = 'new-password';
       
-      // Mock failed signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: {},
-        error: { message: 'Invalid login credentials' }
-      } as any);
+      // Mock failed API call
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: 'Invalid current password' })
+      });
       
       // Act
       const result = await AuthService.changePassword(currentPassword, newPassword);
       
       // Assert
       expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: mockSession.user.email,
-        password: currentPassword
-      });
-      expect(supabaseClient.auth.updateUser).not.toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalledWith(
-        "Nieprawidłowe aktualne hasło przy próbie zmiany hasła",
-        { userId: mockSession.user.id }
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/auth/password",
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({
+            currentPassword,
+            newPassword
+          })
+        })
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        "Błąd podczas zmiany hasła z API",
+        expect.objectContaining({
+          status: 401,
+          error: 'Invalid current password'
+        })
       );
     });
     
-    it('should fail to change password when no session is available', async () => {
+    it('should handle unexpected errors during password change', async () => {
       // Arrange
       const currentPassword = 'current-password';
       const newPassword = 'new-password';
       
-      // Mock no session
-      vi.spyOn(AuthService, 'getSession').mockResolvedValueOnce(null);
+      // Mock fetch throwing error
+      mockFetch.mockRejectedValue(new Error('Network error'));
       
       // Act
       const result = await AuthService.changePassword(currentPassword, newPassword);
       
       // Assert
       expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).not.toHaveBeenCalled();
-      expect(supabaseClient.auth.updateUser).not.toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith("Próba zmiany hasła bez aktywnej sesji");
-    });
-    
-    it('should handle error when updateUser fails', async () => {
-      // Arrange
-      const currentPassword = 'current-password';
-      const newPassword = 'new-password';
-      
-      // Mock successful signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: { session: mockSession },
-        error: null
-      } as any);
-      
-      // Mock failed updateUser
-      vi.mocked(supabaseClient.auth.updateUser).mockResolvedValue({
-        data: {},
-        error: { message: 'Failed to update password' }
-      } as any);
-      
-      // Act
-      const result = await AuthService.changePassword(currentPassword, newPassword);
-      
-      // Assert
-      expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalled();
-      expect(supabaseClient.auth.updateUser).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith(
-        "Błąd podczas aktualizacji hasła",
+        "Nieoczekiwany błąd podczas zmiany hasła",
         expect.objectContaining({
-          userId: mockSession.user.id,
-          error: 'Failed to update password'
+          error: expect.any(Error)
         })
       );
     });
@@ -171,12 +138,6 @@ describe('AuthService', () => {
     it('should successfully delete account when password is correct', async () => {
       // Arrange
       const password = 'correct-password';
-      
-      // Mock successful signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: { session: mockSession },
-        error: null
-      } as any);
       
       // Mock successful API call
       mockFetch.mockResolvedValue({
@@ -189,83 +150,28 @@ describe('AuthService', () => {
       
       // Assert
       expect(result).toBe(true);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: mockSession.user.email,
-        password: password
-      });
       expect(mockFetch).toHaveBeenCalledWith(
         "/api/auth/account",
         expect.objectContaining({
           method: "DELETE",
           headers: expect.objectContaining({
             "Content-Type": "application/json"
-          })
+          }),
+          body: JSON.stringify({ password })
         })
       );
-      expect(logger.info).toHaveBeenCalledWith(
-        "Konto użytkownika zostało usunięte",
-        { userId: mockSession.user.id }
-      );
+      expect(logger.info).toHaveBeenCalledWith("Konto użytkownika zostało usunięte pomyślnie");
     });
     
-    it('should fail to delete account when password is incorrect', async () => {
+    it('should fail to delete account when API returns error', async () => {
       // Arrange
       const password = 'wrong-password';
-      
-      // Mock failed signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: {},
-        error: { message: 'Invalid login credentials' }
-      } as any);
-      
-      // Act
-      const result = await AuthService.deleteAccount(password);
-      
-      // Assert
-      expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: mockSession.user.email,
-        password: password
-      });
-      expect(mockFetch).not.toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalledWith(
-        "Nieprawidłowe hasło przy próbie usunięcia konta",
-        { userId: mockSession.user.id }
-      );
-    });
-    
-    it('should fail to delete account when no session is available', async () => {
-      // Arrange
-      const password = 'correct-password';
-      
-      // Mock no session
-      vi.spyOn(AuthService, 'getSession').mockResolvedValueOnce(null);
-      
-      // Act
-      const result = await AuthService.deleteAccount(password);
-      
-      // Assert
-      expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).not.toHaveBeenCalled();
-      expect(mockFetch).not.toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith("Próba usunięcia konta bez aktywnej sesji");
-    });
-    
-    it('should handle error when API call fails', async () => {
-      // Arrange
-      const password = 'correct-password';
-      
-      // Mock successful signInWithPassword
-      vi.mocked(supabaseClient.auth.signInWithPassword).mockResolvedValue({
-        data: { session: mockSession },
-        error: null
-      } as any);
       
       // Mock failed API call
       mockFetch.mockResolvedValue({
         ok: false,
-        status: 500,
-        json: () => Promise.resolve({ error: 'Server error' })
+        status: 401,
+        json: () => Promise.resolve({ error: 'Invalid password' })
       });
       
       // Act
@@ -273,13 +179,38 @@ describe('AuthService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(supabaseClient.auth.signInWithPassword).toHaveBeenCalled();
-      expect(mockFetch).toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith(
-        "Błąd podczas usuwania konta przez API",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/auth/account",
         expect.objectContaining({
-          userId: mockSession.user.id,
-          status: 500
+          method: "DELETE",
+          body: JSON.stringify({ password })
+        })
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        "Błąd podczas usuwania konta z API",
+        expect.objectContaining({
+          status: 401,
+          error: 'Invalid password'
+        })
+      );
+    });
+    
+    it('should handle unexpected errors during account deletion', async () => {
+      // Arrange
+      const password = 'correct-password';
+      
+      // Mock fetch throwing error
+      mockFetch.mockRejectedValue(new Error('Network error'));
+      
+      // Act
+      const result = await AuthService.deleteAccount(password);
+      
+      // Assert
+      expect(result).toBe(false);
+      expect(logger.error).toHaveBeenCalledWith(
+        "Nieoczekiwany błąd podczas usuwania konta",
+        expect.objectContaining({
+          error: expect.any(Error)
         })
       );
     });

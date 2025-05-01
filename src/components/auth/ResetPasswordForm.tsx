@@ -6,11 +6,15 @@ import { toast } from "../ui/use-toast";
 import { authSchemas } from "@/lib/validation/auth.schema";
 import { AuthService } from "@/lib/services/auth.service";
 import { useAuthForm } from "@/hooks/useAuthForm";
+import { useEffect, useRef } from "react";
 import type { z } from "zod";
+import { useHydration, useFormMounting } from "@/hooks/useHydration";
 
 type FormValues = z.infer<typeof authSchemas.resetPassword>;
 
 export default function ResetPasswordForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  
   const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
     schema: authSchemas.resetPassword,
     onSubmit: async (data) => {
@@ -22,6 +26,18 @@ export default function ResetPasswordForm() {
     },
   });
 
+  useHydration();
+  useFormMounting(formRef);
+
+  useEffect(() => {
+    // Add hydration marker to root element
+    document.documentElement.setAttribute('data-hydrated', 'true');
+    
+    return () => {
+      document.documentElement.removeAttribute('data-hydrated');
+    };
+  }, []);
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -29,9 +45,15 @@ export default function ResetPasswordForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-4"
+            data-testid="reset-password-form"
+            ref={formRef}
+            aria-busy={isLoading}
+          >
             {error && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
               </div>
             )}
@@ -46,6 +68,7 @@ export default function ResetPasswordForm() {
                       placeholder="Enter your email"
                       type="email"
                       disabled={isLoading}
+                      data-testid="email-input"
                       {...field}
                     />
                   </FormControl>
@@ -53,7 +76,12 @@ export default function ResetPasswordForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
+              data-testid="reset-password-submit"
+            >
               {isLoading ? "Wysyłanie..." : "Zresetuj hasło"}
             </Button>
           </form>

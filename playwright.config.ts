@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { TEST_CONFIG } from './e2e/test.config';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -13,19 +14,19 @@ export default defineConfig({
   testDir: './e2e',
   testMatch: ['**/*.spec.ts'],
   /* Maximum time one test can run for */
-  timeout: 30000,
+  timeout: TEST_CONFIG.TIMEOUTS.NAVIGATION,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met
      */
-    timeout: 10000
+    timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
   },
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -42,61 +43,41 @@ export default defineConfig({
     /* Take screenshots on failure */
     screenshot: 'only-on-failure',
     /* Record video on failure */
-    video: 'on-first-retry',
+    video: 'retain-on-failure',
     /* By default, playwright will ignore uncaught exceptions. We want to treat them as test failures */
     ignoreHTTPSErrors: true,
     /* Set actionability timeout */
-    actionTimeout: 10000,
+    actionTimeout: TEST_CONFIG.TIMEOUTS.ELEMENT,
     /* Add test attributes */
     testIdAttribute: 'data-testid',
+    /* Increase timeouts */
+    navigationTimeout: TEST_CONFIG.TIMEOUTS.NAVIGATION,
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for different browsers */
   projects: [
     {
-      name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: 'visual',
-      testMatch: /visual\.spec\.ts/,
-      use: { 
-        ...devices['Desktop Chrome'],
-        viewport: { width: 1280, height: 720 },
-        colorScheme: 'light',
-      },
-      // No auth dependencies for visual tests
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
     },
     {
-      name: 'e2e',
-      testMatch: /^((?!visual\.spec\.ts).)*\.spec\.ts$/,
-      use: { 
-        ...devices['Desktop Chrome'],
-        storageState: 'e2e/.auth/user.json',
-        viewport: { width: 1280, height: 720 },
-        colorScheme: 'light',
-      },
-      dependencies: ['setup'],
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
-    {
-      name: 'e2e-mobile',
-      use: { 
-        ...devices['Pixel 5'],
-        storageState: 'e2e/.auth/user.json',
-        colorScheme: 'light',
-      },
-      dependencies: ['setup'],
-    }
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev:test',
+    command: 'npm run dev',
     url: 'http://localhost:4321',
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
-    timeout: 60000,
+    timeout: 120000,
     env: {
       RUNNING_E2E: 'true',
       NODE_ENV: 'test',

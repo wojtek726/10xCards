@@ -1,13 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test } from './fixtures/page-objects';
+import { expect } from '@playwright/test';
 
 // Visual tests for UI components
 test.describe('Visual Tests', () => {
-  test.beforeEach(async ({ context, page }) => {
-    // Grant specific permissions
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:3000' });
-    
+  test.beforeEach(async ({ page, context }) => {
     // Set default timeout for all operations
-    test.setTimeout(120000);
+    test.setTimeout(10000);
     
     // Disable animations and transitions
     await page.addStyleTag({
@@ -15,96 +13,51 @@ test.describe('Visual Tests', () => {
         *, *::before, *::after {
           animation: none !important;
           transition: none !important;
+          scroll-behavior: auto !important;
         }
       `
     });
+
+    // Set viewport size for consistent screenshots
+    await page.setViewportSize({ width: 1280, height: 720 });
   });
 
-  test('login page should match visual baseline', async ({ page }) => {
-    try {
-      await page.goto('/auth/login', { waitUntil: 'networkidle' });
-      
-      // Wait for a basic element that should be present in static HTML
-      await page.waitForSelector('h1, h2, h3, div.container', { state: 'visible', timeout: 30000 });
-      
-      // Ensure page is stable
-      await page.waitForTimeout(1000);
-
-      await expect(page).toHaveScreenshot('login-page.png', {
-        fullPage: true,
-        timeout: 60000,
-        maxDiffPixelRatio: 0.1,
-        animations: 'disabled'
-      });
-    } catch (error) {
-      console.error('Login page visual test failed:', error);
-      await page.screenshot({ path: 'test-results/login-error.png', fullPage: true });
-      throw error;
-    }
+  test('login page should match visual baseline', async ({ loginPage, page }) => {
+    await loginPage.goto();
+    await expect(page).toHaveScreenshot('login-page.png', {
+      maxDiffPixelRatio: 0.1
+    });
   });
 
-  test('register page should match visual baseline', async ({ page }) => {
-    try {
-      await page.goto('/auth/signup', { waitUntil: 'networkidle' });
-      
-      // Wait a brief period for hydration to complete
-      await page.waitForTimeout(1000);
-      
-      // Wait for a basic element that should be present in static HTML
-      await page.waitForSelector('h1, h2, h3, div.container', { state: 'visible', timeout: 30000 });
-      
-      // Ensure page is stable
-      await page.waitForTimeout(1000);
-
-      await expect(page).toHaveScreenshot('register-page.png', {
-        fullPage: true,
-        timeout: 60000,
-        maxDiffPixelRatio: 0.1,
-        animations: 'disabled'
-      });
-    } catch (error) {
-      console.error('Register page visual test failed:', error);
-      await page.screenshot({ path: 'test-results/register-error.png', fullPage: true });
-      throw error;
-    }
+  test('register page should match visual baseline', async ({ signupPage, page }) => {
+    await signupPage.goto();
+    await expect(page).toHaveScreenshot('register-page.png', {
+      maxDiffPixelRatio: 0.1
+    });
   });
 
-  test('mobile view - login page', async ({ page }) => {
-    try {
-      // Set viewport before navigation
-      await page.setViewportSize({ width: 375, height: 667 });
-      
-      await page.goto('/auth/login', { waitUntil: 'networkidle' });
-      
-      // Wait a brief period for hydration to complete on mobile
-      await page.waitForTimeout(2000);
-      
-      // Wait for a basic element that should be present in static HTML
-      await page.waitForSelector('h1, h2, h3, div.container', { state: 'visible', timeout: 30000 });
+  test('error states should match visual baseline', async ({ loginPage, page }) => {
+    await loginPage.goto();
+    await loginPage.login('invalid@example.com', 'wrongpassword');
+    await expect(page).toHaveScreenshot('login-error.png', {
+      maxDiffPixelRatio: 0.1
+    });
+  });
 
-      // Set viewport constraints
-      await page.evaluate(() => {
-        document.documentElement.style.cssText = 'height: 100vh; overflow: hidden;';
-        document.body.style.cssText = 'height: 100vh; overflow: hidden;';
-      });
+  test('mobile view - login page', async ({ loginPage, page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await loginPage.goto();
+    await expect(page).toHaveScreenshot('login-page-mobile.png', {
+      maxDiffPixelRatio: 0.1
+    });
+  });
 
-      // Ensure page is stable
-      await page.waitForTimeout(1000);
-
-      await expect(page).toHaveScreenshot('login-page-mobile.png', {
-        fullPage: false,
-        timeout: 60000,
-        maxDiffPixelRatio: 0.1,
-        animations: 'disabled'
-      });
-    } catch (error) {
-      console.error('Mobile login page visual test failed:', error);
-      await page.screenshot({ 
-        path: 'test-results/mobile-login-error.png',
-        fullPage: true
-      });
-      throw error;
-    }
+  test('mobile view - register page', async ({ signupPage, page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await signupPage.goto();
+    await expect(page).toHaveScreenshot('register-page-mobile.png', {
+      maxDiffPixelRatio: 0.1
+    });
   });
 
   test.skip('flashcards list mockup', async ({ page, context }) => {
@@ -166,7 +119,7 @@ test.describe('Visual Tests', () => {
         await page.waitForTimeout(1000);
         await expect(page).toHaveScreenshot('mockup-cards.png', {
           fullPage: true,
-          timeout: 60000,
+          timeout: 10000,
           maxDiffPixelRatio: 0.1,
           animations: 'disabled'
         });
@@ -175,11 +128,11 @@ test.describe('Visual Tests', () => {
       
       try {
         await page.waitForSelector('[data-testid="flashcards-list"]', { state: 'visible', timeout: 10000 });
-        await page.waitForTimeout(1000); // Wait for any dynamic content
+        await page.waitForTimeout(100); // Wait for any dynamic content
 
         await expect(page).toHaveScreenshot('mockup-cards.png', {
           fullPage: true,
-          timeout: 60000,
+          timeout: 10000,
           maxDiffPixelRatio: 0.1,
           animations: 'disabled'
         });

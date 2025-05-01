@@ -1,137 +1,127 @@
 import type { Page } from '@playwright/test';
 
+const TEST_USER = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token'
+};
+
 export async function mockAuthApi(page: Page) {
-  // Mock Supabase auth endpoints
-  await page.route('**/auth/v1/**', async (route, request) => {
-    const url = request.url();
-    const method = request.method();
-    
-    if (url.includes('/auth/v1/token')) {
-      const body = request.postDataJSON();
-      
-      if (!body?.email?.includes('@')) {
-        await route.fulfill({
-          status: 400,
-          body: JSON.stringify({
-            error: 'Invalid email address',
-            message: 'Invalid email address'
-          })
-        });
-        return;
-      }
-      
-      if (body?.email === 'invalid@example.com' || body?.password === 'wrongpassword') {
-        await route.fulfill({
-          status: 400,
-          body: JSON.stringify({
-            error: 'Invalid login credentials',
-            message: 'Invalid login credentials'
-          })
-        });
-        return;
-      }
+  // Mock login endpoint
+  await page.route('**/api/auth/login', async route => {
+    const request = route.request();
+    const body = request.postDataJSON();
 
+    if (body.email === 'test@example.com' && body.password === 'password123') {
       await route.fulfill({
         status: 200,
+        contentType: 'application/json',
         body: JSON.stringify({
-          access_token: 'test-access-token',
-          refresh_token: 'test-refresh-token',
-          expires_in: 3600,
-          expires_at: new Date(Date.now() + 3600000).getTime(),
-          token_type: 'bearer',
-          user: { 
-            id: 'test-user-id', 
-            email: body?.email || 'test@example.com',
-            aud: 'authenticated',
-            role: 'authenticated'
-          }
+          user: { id: TEST_USER.id, email: TEST_USER.email },
+          access_token: TEST_USER.access_token,
+          refresh_token: TEST_USER.refresh_token
         })
       });
-    } 
-    else if (url.includes('/auth/v1/user')) {
-      if (method === 'GET') {
-        await route.fulfill({
-          status: 200,
-          body: JSON.stringify({
-            id: 'test-user-id',
-            email: 'test@example.com',
-            aud: 'authenticated',
-            role: 'authenticated'
-          })
-        });
-      } else {
-        await route.continue();
-      }
-    }
-    else if (url.includes('/auth/v1/signup')) {
-      const body = request.postDataJSON();
-      
-      if (!body?.email?.includes('@')) {
-        await route.fulfill({
-          status: 400,
-          body: JSON.stringify({
-            error: 'Invalid email address',
-            message: 'Invalid email address'
-          })
-        });
-        return;
-      }
-      
-      if (body?.password?.length < 8) {
-        await route.fulfill({
-          status: 400,
-          body: JSON.stringify({
-            error: 'Password should be at least 8 characters',
-            message: 'Password should be at least 8 characters'
-          })
-        });
-        return;
-      }
-
+    } else if (!body.email.includes('@')) {
       await route.fulfill({
-        status: 200,
-        body: JSON.stringify({
-          access_token: 'test-access-token',
-          refresh_token: 'test-refresh-token',
-          expires_in: 3600,
-          expires_at: new Date(Date.now() + 3600000).getTime(),
-          token_type: 'bearer',
-          user: { 
-            id: 'test-user-id', 
-            email: body?.email || 'test@example.com',
-            aud: 'authenticated',
-            role: 'authenticated'
-          }
-        })
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid email format' })
       });
-    }
-    else {
-      await route.continue();
+    } else {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid login credentials' })
+      });
     }
   });
 
-  // Mock Supabase data API endpoints
-  await page.route('**/rest/v1/**', async (route, request) => {
-    const url = request.url();
-    const method = request.method();
+  // Mock signup endpoint
+  await page.route('**/api/auth/signup', async route => {
+    const request = route.request();
+    const body = request.postDataJSON();
 
-    if (url.includes('/rest/v1/profiles')) {
-      if (method === 'GET') {
-        await route.fulfill({
-          status: 200,
-          body: JSON.stringify([{
-            id: 'test-user-id',
-            email: 'test@example.com',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-        });
-      } else {
-        await route.continue();
-      }
+    if (body.password.length < 8) {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Password must be at least 8 characters long' })
+      });
+    } else if (body.password !== body.confirmPassword) {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Passwords do not match' })
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: { id: TEST_USER.id, email: body.email },
+          access_token: TEST_USER.access_token,
+          refresh_token: TEST_USER.refresh_token
+        })
+      });
     }
-    else {
-      await route.continue();
+  });
+
+  // Mock session endpoint
+  await page.route('**/api/auth/session', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        user: null,
+        accessToken: null,
+        error: null
+      })
+    });
+  });
+
+  // Mock logout endpoint
+  await page.route('**/api/auth/logout', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true })
+    });
+  });
+
+  // Mock password reset endpoint
+  await page.route('**/api/auth/reset-password', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true })
+    });
+  });
+
+  // Mock user profile endpoint
+  await page.route('**/api/users/me', async (route) => {
+    const cookies = route.request().headers()['cookie'] || '';
+    const hasAuthCookie = cookies.includes('sb-access-token');
+    
+    if (!hasAuthCookie) {
+      await route.fulfill({
+        status: 401,
+        body: JSON.stringify({
+          error: 'Unauthorized'
+        })
+      });
+      return;
     }
+    
+    await route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        id: 'test-user-id',
+        email: 'test@example.com',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    });
   });
 } 

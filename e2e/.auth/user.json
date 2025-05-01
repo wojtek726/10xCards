@@ -13,7 +13,7 @@
         },
         {
           "name": "supabase-auth-token",
-          "value": "{\"access_token\":\"test-access-token\",\"refresh_token\":\"test-refresh-token\",\"expires_at\":1745584095,\"expires_in\":3600,\"token_type\":\"bearer\",\"user\":{\"id\":\"test-user-id\",\"email\":\"test@example.com\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email_confirmed_at\":\"2025-04-25T11:28:15.555Z\"}}"
+          "value": "{\"access_token\":\"test-access-token\",\"refresh_token\":\"test-refresh-token\",\"expires_at\":1745741272,\"expires_in\":3600,\"token_type\":\"bearer\",\"user\":{\"id\":\"test-user-id\",\"email\":\"test@example.com\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email_confirmed_at\":\"2025-04-27T07:07:52.514Z\"}}"
         }
       ]
     }

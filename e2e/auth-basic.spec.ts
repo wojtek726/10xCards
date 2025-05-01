@@ -1,37 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test } from './fixtures/page-objects';
+import { expect } from '@playwright/test';
 
 test.describe('Basic Auth Pages', () => {
-  test('should navigate to login page', async ({ page }) => {
-    // Navigate to login page
-    await page.goto('/auth/login', { waitUntil: 'networkidle' });
+  test('should navigate to login page', async ({ page, loginPage }) => {
+    await loginPage.goto();
     
-    // Check if the email and password fields are present using data-testid
-    const emailField = await page.getByTestId('email-input').isVisible();
-    const passwordField = await page.getByTestId('password-input').isVisible();
-    
-    expect(emailField).toBeTruthy();
-    expect(passwordField).toBeTruthy();
-    
-    // Check if the submit button is present
-    const submitButton = await page.getByTestId('login-submit').isVisible();
-    expect(submitButton).toBeTruthy();
+    // Verify all required elements are present
+    await expect(page.getByTestId('email')).toBeVisible();
+    await expect(page.getByTestId('password')).toBeVisible();
+    await expect(page.getByTestId('submit')).toBeVisible();
+    await expect(page.getByTestId('signup-link')).toBeVisible();
   });
 
-  test('should navigate to signup page', async ({ page }) => {
-    // Navigate to signup page
-    await page.goto('/auth/signup', { waitUntil: 'networkidle' });
+  test('should navigate to signup page', async ({ page, loginPage }) => {
+    await loginPage.goto();
+    await loginPage.switchToSignup();
     
-    // Check if the email and password fields are present using data-testid
-    const emailField = await page.getByTestId('email-input').isVisible();
-    const passwordField = await page.getByTestId('password-input').isVisible();
-    const confirmPasswordField = await page.getByTestId('confirm-password-input').isVisible();
-    
-    expect(emailField).toBeTruthy();
-    expect(passwordField).toBeTruthy();
-    expect(confirmPasswordField).toBeTruthy();
-    
-    // Check if the submit button is present
-    const submitButton = await page.getByTestId('register-submit').isVisible();
-    expect(submitButton).toBeTruthy();
+    // Verify all required elements are present
+    await expect(page.getByTestId('email')).toBeVisible();
+    await expect(page.getByTestId('password')).toBeVisible();
+    await expect(page.getByTestId('confirm-password')).toBeVisible();
+    await expect(page.getByTestId('submit')).toBeVisible();
+    await expect(page.getByTestId('login-link')).toBeVisible();
   });
 }); 

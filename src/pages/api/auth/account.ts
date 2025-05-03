@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabaseClient, createSupabaseServerInstance } from '@/db/supabase.client';
-import { logger } from '@/lib/utils/logger';
+import { createServerClient } from '@/db/supabase.client';
+import { logger } from '@/lib/services/logger.service';
 import { z } from 'zod';
 
 // Ensure API route is not prerendered and processed as a server endpoint
@@ -16,7 +16,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     logger.info("Rozpoczynanie obsługi żądania DELETE /api/auth/account");
     
     // Używamy instancji serwera z cookies do autoryzacji
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     logger.info("Utworzono instancję Supabase dla autoryzacji użytkownika");
     
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -96,11 +96,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     try {
       // Tworzenie instancji supabase z uprawnieniami administratora
       logger.info("Tworzenie instancji administratora Supabase z uprawnieniami service_role");
-      const adminSupabase = createSupabaseServerInstance({ 
-        request, 
-        cookies, 
-        useServiceRole: true 
-      });
+      const adminSupabase = createServerClient(cookies, true);
       
       // Wykonujemy zapytanie SQL bezpośrednio, aby zapewnić prawidłową kolejność usuwania
       logger.info("Wykonanie rpc do usunięcia konta użytkownika", { userId });
@@ -198,46 +194,26 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
         }
       } catch (checkError) {
         logger.error("Błąd podczas sprawdzania użytkowników po usunięciu", {
-          error: checkError instanceof Error ? checkError.message : String(checkError)
+          error: checkError
         });
       }
-    } catch (adminError) {
-      logger.error("Wyjątek podczas usuwania konta przez admin API", {
-        userId,
-        error: adminError instanceof Error ? adminError.message : String(adminError)
-      });
-      
+
+      logger.info("Konto użytkownika zostało pomyślnie usunięte", { userId });
       return new Response(
-        JSON.stringify({ 
-          error: "Wystąpił błąd podczas usuwania konta", 
-          details: adminError instanceof Error ? adminError.message : "Nieznany błąd"
-        }),
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      logger.error("Nieoczekiwany błąd podczas usuwania konta", { error });
+      return new Response(
+        JSON.stringify({ error: "Wystąpił nieoczekiwany błąd podczas usuwania konta" }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
-
-    // Wyczyść ciasteczka sesji
-    logger.info("Czyszczenie ciasteczek sesji");
-    cookies.delete('sb-access-token', { path: '/' });
-    cookies.delete('sb-refresh-token', { path: '/' });
-
-    logger.info("Konto użytkownika zostało pomyślnie usunięte", { userId });
-
-    return new Response(
-      JSON.stringify({ success: true, message: "Konto zostało usunięte" }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
-    logger.error("Nieoczekiwany błąd podczas usuwania konta", { 
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
+    logger.error("Nieoczekiwany błąd podczas obsługi żądania DELETE /api/auth/account", { error });
     return new Response(
-      JSON.stringify({ 
-        error: "Wystąpił nieoczekiwany błąd",
-        details: error instanceof Error ? error.message : "Nieznany błąd"
-      }),
+      JSON.stringify({ error: "Wystąpił nieoczekiwany błąd" }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

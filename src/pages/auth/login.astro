@@ -2,60 +2,10 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
 import { SignInForm } from '../../components/auth/SignInForm';
-import { logger } from '../../lib/services/logger.service';
 
-logger.debug('Rendering login page');
-
-const { user, supabase } = Astro.locals;
 const isLogout = Astro.url.searchParams.has('logout');
-const sessionExpired = Astro.url.searchParams.has('error') && Astro.url.searchParams.get('error') === 'session_expired';
-const redirectTo = Astro.url.searchParams.get('redirect') || '';
-
-if (isLogout) {
-  const cookiesToDelete = [
-    'sb-access-token',
-    'sb-refresh-token',
-    'supabase-auth-token',
-    'session',
-    'supabase-auth-token-name',
-    'sb-127-auth-token',
-    'sb-localhost-auth-token'
-  ];
-  
-  cookiesToDelete.forEach(name => {
-    Astro.cookies.delete(name, { path: '/' });
-  });
-}
-
-const accessToken = Astro.cookies.get('sb-access-token');
-const refreshToken = Astro.cookies.get('sb-refresh-token');
-const supabaseAuthToken = Astro.cookies.get('supabase-auth-token');
-
-logger.debug('Login page loaded, checking cookies:');
-logger.debug('- Has user in locals:', !!user);
-logger.debug('- Has access token cookie:', !!accessToken);
-logger.debug('- Has refresh token cookie:', !!refreshToken);
-logger.debug('- Has supabase auth token cookie:', !!supabaseAuthToken);
-logger.debug('- All cookies:', Astro.request.headers.get('cookie'));
-
-if (accessToken && refreshToken && supabase && !isLogout) {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    logger.debug('Supabase getUser result:', { hasUser: !!data.user, error });
-    
-    if (data.user) {
-      logger.debug('Valid user detected, redirecting to /flashcards');
-      return Astro.redirect('/flashcards');
-    }
-  } catch (err) {
-    logger.error('Error checking user session:', err);
-  }
-}
-
-if (user && !isLogout) {
-  logger.debug('User in locals, redirecting to /flashcards');
-  return Astro.redirect('/flashcards');
-}
+const sessionExpired = Astro.url.searchParams.has('session_expired');
+const redirectTo = Astro.url.searchParams.get('redirect_to') || '/flashcards';
 ---
 
 <MainLayout title="Logowanie">
@@ -73,158 +23,68 @@ if (user && !isLogout) {
           </button>
         </div>
       )}
-      <div style="position: relative; z-index: 10; visibility: visible; display: block;" data-testid="login-form-container">
-        <div class="w-full max-w-md mx-auto">
-          <div class="text-2xl font-bold text-center mb-4">Logowanie</div>
-          <div class="min-h-[300px]">
-            <SignInForm client:load />
+      <div class="w-full max-w-md mx-auto">
+        <div class="text-2xl font-bold text-center mb-8">Logowanie</div>
+        <div class="min-h-[300px]" data-testid="login-form-container">
+          <div id="loading-spinner" class="flex justify-center items-center min-h-[200px]">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+          <div id="login-form" class="hidden">
+            <SignInForm client:only="react" redirectTo={redirectTo} />
           </div>
         </div>
-      </div>
-      <div class="mt-4 text-center">
-        <a href="/auth/signup" class="text-blue-600 hover:underline" data-testid="switch-to-register">
-          Nie masz konta? Zarejestruj się
-        </a>
+        <div class="mt-4 text-center">
+          <a href="/auth/signup" class="text-blue-600 hover:underline" data-testid="switch-to-register">
+            Nie masz konta? Zarejestruj się
+          </a>
+        </div>
       </div>
     </div>
   </div>
 </MainLayout>
 
-<script define:vars={{ isLogout: isLogout, sessionExpired: sessionExpired }}>
-  import { logger } from '../../lib/services/logger.service';
-
-  function deleteAllCookies() {
-    // Pobierz wszystkie ciasteczka
-    const cookies = document.cookie.split(';');
-    const hostname = window.location.hostname;
+<script>
+  // Obsługa przycisku czyszczenia ciasteczek
+  document.getElementById('clear-cookies-btn')?.addEventListener('click', () => {
+    // Wyczyść localStorage
+    window.localStorage.clear();
     
-    // Lista domen, na których mogą być ustawione ciasteczka
-    const possibleDomains = [
-      hostname,             // bieżąca domena (np. localhost)
-      `.${hostname}`,       // .localhost
-      '127.0.0.1',          // alternatywna domena localhost
-      '.127.0.0.1',         // .127.0.0.1
-    ];
-    
-    // Lista ścieżek, na których mogą być ustawione ciasteczka
-    const possiblePaths = ['/', '/auth', '/auth/login', ''];
-    
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i];
-      const eqPos = cookie.indexOf('=');
-      const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-      
-      // Dla każdej możliwej ścieżki i domeny
-      possiblePaths.forEach(path => {
-        // Standardowe usunięcie
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path}`;
-        
-        // Próba z flagą Secure
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};secure`;
-        
-        // Dla każdej możliwej domeny
-        possibleDomains.forEach(domain => {
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};domain=${domain}`;
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};domain=${domain};secure`;
-        });
-      });
-    }
-    
-    // Specyficzne ciasteczka związane z Supabase Auth
-    const supabaseCookies = [
-      'sb-access-token',
-      'sb-refresh-token',
-      'supabase-auth-token',
-      'sb-127-auth-token',
-      'sb-localhost-auth-token',
-      'sb-127-auth-token-code-verifier',
-      'sb-localhost-auth-token-code-verifier'
-    ];
-    
-    // Usuń każde ciasteczko Supabase używając wszystkich możliwych kombinacji domen i ścieżek
-    supabaseCookies.forEach(name => {
-      possiblePaths.forEach(path => {
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path}`;
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};secure`;
-        
-        possibleDomains.forEach(domain => {
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};domain=${domain}`;
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=${path};domain=${domain};secure`;
-        });
-      });
+    // Wyczyść wszystkie ciasteczka
+    document.cookie.split(';').forEach(cookie => {
+      document.cookie = cookie
+        .replace(/^ +/, '')
+        .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
     });
     
-    logger.debug('Wykonano agresywne czyszczenie ciasteczek po stronie klienta');
-  }
-
-  // Uruchom czyszczenie ciasteczek przy wylogowaniu lub błędzie sesji
-  if (isLogout || sessionExpired) {
-    logger.debug('Wykryto wylogowanie lub wygaśnięcie sesji, czyszczenie wszystkich ciasteczek');
-    deleteAllCookies();
-    
-    // Usuń parametry z URL, zachowując redirect
-    const url = new URL(window.location.href);
-    const redirectParam = url.searchParams.get('redirect');
-    
-    url.search = '';
-    if (redirectParam) {
-      url.searchParams.set('redirect', redirectParam);
-    }
-    
-    window.history.replaceState({}, document.title, url.toString());
-    
-    // Dodatkowe działania w przypadku wygaśnięcia sesji
-    if (sessionExpired) {
-      // Ustaw flagę w localStorage, aby wymusić odświeżenie innych zakładek
-      localStorage.setItem('session_expired', Date.now().toString());
-      
-      // Usuń po 5 sekundach
-      setTimeout(() => {
-        localStorage.removeItem('session_expired');
-      }, 5000);
-    }
-  }
-  
-  // Nasłuchuj zmian w localStorage, aby synchronizować wylogowanie między zakładkami
-  window.addEventListener('storage', (event) => {
-    if (event.key === 'session_expired') {
-      logger.debug('Wykryto wygaśnięcie sesji w innej zakładce, odświeżanie strony');
-      window.location.reload();
-    }
+    window.location.reload();
   });
-</script>
 
-<script>
-  // Skrypt do obsługi przycisku czyszczenia ciasteczek
-  document.addEventListener('DOMContentLoaded', () => {
-    const clearCookiesBtn = document.getElementById('clear-cookies-btn');
-    
-    if (clearCookiesBtn) {
-      clearCookiesBtn.addEventListener('click', () => {
-        // Pobierz wszystkie ciasteczka
-        const cookies = document.cookie.split(';');
-        
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i];
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-          
-          // Usuń wszystkie ciasteczka ze wszystkimi możliwymi opcjami
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${window.location.hostname}`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/auth`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/auth; secure`;
+  // Pokaż formularz i ukryj spinner gdy React jest gotowy
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.addedNodes.length > 0) {
+        const loginForm = document.getElementById('login-form');
+        const spinner = document.getElementById('loading-spinner');
+        if (loginForm?.querySelector('form')) {
+          loginForm.classList.remove('hidden');
+          spinner?.classList.add('hidden');
+          observer.disconnect();
         }
-        
-        // Wyczyść localStorage i sessionStorage
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Przekieruj na stronę logowania z czystym URL
-        window.location.href = '/auth/login?cleared=true';
-      });
-    }
+      }
+    });
   });
+
+  observer.observe(document.getElementById('login-form') || document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // Timeout zabezpieczający - pokaż formularz po 2 sekundach nawet jeśli nie wykryto zmian
+  setTimeout(() => {
+    const loginForm = document.getElementById('login-form');
+    const spinner = document.getElementById('loading-spinner');
+    loginForm?.classList.remove('hidden');
+    spinner?.classList.add('hidden');
+    observer.disconnect();
+  }, 2000);
 </script> 

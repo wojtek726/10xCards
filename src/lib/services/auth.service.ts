@@ -1,4 +1,3 @@
-import { supabaseClient } from '@/db/supabase.client';
 import type { AuthResponse, SignInDTO, SignUpDTO } from '@/types';
 import { logger } from '@/lib/utils/logger';
 
@@ -71,8 +70,17 @@ export class AuthService {
 
   static async signOut() {
     try {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) throw error;
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Wystąpił błąd podczas wylogowywania");
+      }
+
       return { error: null };
     } catch (error) {
       return { error: 'Wystąpił błąd podczas wylogowywania' };
@@ -80,7 +88,18 @@ export class AuthService {
   }
 
   static async getSession() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const response = await fetch("/api/auth/session", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const { session } = await response.json();
     return session;
   }
 

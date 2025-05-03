@@ -1,11 +1,12 @@
-import { createSupabaseServerInstance } from '@/db/supabase.client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FlashcardDTO } from '@/types';
+import type { Database } from '@/db/database.types';
 
 export class FlashcardService {
-  static async update(id: string, data: Partial<FlashcardDTO>, userId: string) {
-    const supabase = createSupabaseServerInstance();
-    
-    const { data: updatedFlashcard, error } = await supabase
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
+
+  async update(id: string, data: Partial<FlashcardDTO>, userId: string) {
+    const { data: updatedFlashcard, error } = await this.supabase
       .from('flashcards')
       .update(data)
       .eq('id', id)

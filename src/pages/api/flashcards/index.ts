@@ -1,8 +1,7 @@
 import type { APIRoute } from 'astro';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient } from '../../../db/supabase.client';
 import { z } from 'zod';
 import { logger } from '../../../lib/utils/logger';
-import type { Database } from '../../../db/database.types';
 
 export const prerender = false;
 
@@ -12,22 +11,9 @@ const createFlashcardSchema = z.object({
   card_origin: z.enum(['manual', 'ai', 'ai_modified']).default('manual'),
 });
 
-const supabaseUrl = import.meta.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const supabase = createServerClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          get: (key) => cookies.get(key)?.value,
-          set: (key, value, options) => cookies.set(key, value, options),
-          remove: (key, options) => cookies.delete(key, options),
-        },
-      }
-    );
+    const supabase = createServerClient(cookies);
 
     // Get user from auth
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -1,33 +1,26 @@
 ---
-import { createSupabaseServerInstance } from '../../db/supabase.client';
-import { logger } from '../../lib/services/logger.service';
+import { createServerClient } from "../../db/supabase.client";
+import { logger } from "../../lib/services/logger.service";
+
+const supabase = createServerClient(Astro.cookies);
 
 try {
-  const supabase = createSupabaseServerInstance({ 
-    request: Astro.request, 
-    cookies: Astro.cookies 
-  });
-  
   const { searchParams } = new URL(Astro.request.url);
-  const code = searchParams.get('code');
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/flashcards";
 
-  if (!code) {
-    logger.error('No code provided in callback URL');
-    return Astro.redirect('/auth/login?error=no_code');
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      logger.error("Error exchanging code for session:", error);
+      return Astro.redirect("/auth/login?error=auth_callback_error");
+    }
   }
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  
-  if (error) {
-    logger.error('Error exchanging code for session:', error);
-    return Astro.redirect('/auth/login?error=exchange_failed');
-  }
-
-  logger.debug('Successfully exchanged code for session');
-  return Astro.redirect('/auth/login?verification=success');
-} catch (err) {
-  logger.error('Unexpected error in auth callback:', err);
-  return Astro.redirect('/auth/login?error=unexpected');
+  return Astro.redirect(next);
+} catch (error) {
+  logger.error("Error in auth callback:", error);
+  return Astro.redirect("/auth/login?error=auth_callback_error");
 }
 ---
 

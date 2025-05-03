@@ -4,12 +4,7 @@ import { logger } from '@/lib/utils/logger';
 
 // Mock the supabase client module
 vi.mock('@/db/supabase.client', () => ({
-  supabaseClient: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-    }
-  },
-  createSupabaseServerInstance: vi.fn(),
+  createServerClient: vi.fn(),
   cookieOptions: {
     path: "/",
     secure: false,

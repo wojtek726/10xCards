@@ -2,7 +2,7 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import { ViewTransitions } from 'astro:transitions';
 import { FlashcardService } from '../../lib/services/flashcard.service';
-import { createSupabaseServerInstance } from '../../db/supabase.client';
+import { createServerClient } from '../../db/supabase.client';
 import { FlashcardsView } from '@/components/flashcards/FlashcardsView';
 
 // Parse URL to detect test flag
@@ -18,7 +18,7 @@ if (!user && !isTestMode) {
 }
 
 // Initialize Supabase client and service
-const supabase = createSupabaseServerInstance({ request: Astro.request, cookies: Astro.cookies });
+const supabase = createServerClient(Astro.cookies);
 const flashcardService = new FlashcardService(supabase);
 
 // Fetch flashcards with test mode flag

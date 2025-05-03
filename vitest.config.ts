@@ -11,7 +11,11 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     include: ['src/**/*.test.ts'],
-    exclude: ['e2e/**/*'],
+    exclude: [
+      'e2e/**/*',
+      'src/**/*.e2e.test.ts',
+      'src/**/*.visual.test.ts'
+    ],
     globals: true,
     environment: 'node',
     setupFiles: ['src/test/setup.ts'],
@@ -30,8 +34,6 @@ export default defineConfig({
         'src/layouts/**',
         'src/db/**',
         'src/hooks/**',
-        'src/components/auth/**',
-        'src/components/navigation/**',
         'src/mocks/**'
       ],
       include: [

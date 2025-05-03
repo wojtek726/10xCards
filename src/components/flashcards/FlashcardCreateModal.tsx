@@ -69,7 +69,7 @@ export function FlashcardCreateModal({ isOpen, onClose, onCreate }: FlashcardCre
           <DialogTitle>Dodaj nową fiszkę</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="flashcard-form">
           <div className="space-y-2">
             <Label htmlFor="front">Przód fiszki</Label>
             <Textarea
@@ -112,7 +112,7 @@ export function FlashcardCreateModal({ isOpen, onClose, onCreate }: FlashcardCre
             <Button
               type="submit"
               disabled={isSubmitting}
-              data-testid="create-flashcard-button"
+              data-testid="save-flashcard-button"
             >
               {isSubmitting ? "Tworzenie..." : "Dodaj"}
             </Button>

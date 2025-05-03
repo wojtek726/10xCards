@@ -1,20 +1,20 @@
 import type { APIRoute } from "astro";
+import { createServerClient } from "../../../db/supabase.client";
 import { FlashcardService } from "../../../lib/services/flashcard.service";
-import { createSupabaseServerInstance } from "../../../db/supabase.client";
-import { z } from "zod";
 import { logger } from '../../../lib/services/logger.service';
+import { z } from "zod";
 
 // Schemat walidacji dla tworzenia fiszki
 const createFlashcardSchema = z.object({
-  front: z.string().min(1).max(200),
-  back: z.string().min(1).max(500),
-  card_origin: z.enum(["manual", "ai", "ai_modified"]),
+  front: z.string().min(1, "Front is required"),
+  back: z.string().min(1, "Back is required"),
+  card_origin: z.enum(["manual", "ai", "ai_modified"]).default("manual"),
 });
 
 // Schemat walidacji dla aktualizacji fiszki
 const updateFlashcardSchema = z.object({
-  front: z.string().min(1).max(200).optional(),
-  back: z.string().min(1).max(500).optional(),
+  front: z.string().min(1, "Front is required"),
+  back: z.string().min(1, "Back is required"),
 });
 
 // Schemat walidacji dla parametrów paginacji
@@ -25,7 +25,7 @@ const paginationSchema = z.object({
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
 
     // Sprawdzamy czy użytkownik jest zalogowany
@@ -43,25 +43,21 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const url = new URL(request.url);
     const flashcardId = url.pathname.split("/").pop();
 
-    // Jeśli podano ID fiszki, pobieramy konkretną fiszkę
-    if (flashcardId && flashcardId !== "flashcards") {
-      const flashcard = await flashcardService.getFlashcard(user.id, flashcardId);
-      
-      if (!flashcard) {
-        return new Response(JSON.stringify({ error: "Flashcard not found" }), {
-          status: 404,
-        });
-      }
-
-      return new Response(JSON.stringify(flashcard));
+    if (!flashcardId || flashcardId === "flashcards") {
+      return new Response(
+        JSON.stringify({ error: "Flashcard ID is required" }),
+        { status: 400 }
+      );
     }
 
-    // W przeciwnym razie pobieramy listę fiszek z paginacją
-    const params = Object.fromEntries(url.searchParams.entries());
-    const { page, limit } = paginationSchema.parse(params);
+    const flashcard = await flashcardService.getFlashcard(user.id, flashcardId);
+    if (!flashcard) {
+      return new Response(JSON.stringify({ error: "Flashcard not found" }), {
+        status: 404,
+      });
+    }
 
-    const result = await flashcardService.getFlashcards(user.id, page, limit);
-    return new Response(JSON.stringify(result));
+    return new Response(JSON.stringify(flashcard), { status: 200 });
   } catch (error) {
     logger.error("Error in GET /api/flashcards:", error);
     return new Response(
@@ -73,7 +69,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
 
     // Sprawdzamy czy użytkownik jest zalogowany
@@ -89,28 +85,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await request.json();
-    logger.debug("Received flashcard data:", body);
-    
-    try {
-      const validatedData = createFlashcardSchema.parse(body);
-      logger.debug("Validated flashcard data:", validatedData);
-      
-      const flashcard = await flashcardService.createFlashcard(user.id, validatedData);
-      return new Response(JSON.stringify(flashcard), { status: 201 });
-    } catch (validationError) {
-      logger.error("Validation error details:", validationError);
-      if (validationError instanceof z.ZodError) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Validation error", 
-            details: validationError.errors,
-            received: body 
-          }),
-          { status: 400 }
-        );
-      }
-      throw validationError;
+    const result = createFlashcardSchema.safeParse(body);
+
+    if (!result.success) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request data", issues: result.error.format() }),
+        { status: 400 }
+      );
     }
+
+    const flashcard = await flashcardService.createFlashcard(user.id, result.data);
+    return new Response(JSON.stringify(flashcard), { status: 201 });
   } catch (error) {
     logger.error("Error in POST /api/flashcards:", error);
     return new Response(
@@ -122,7 +107,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 export const PUT: APIRoute = async ({ request, cookies }) => {
   try {
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
 
     // Sprawdzamy czy użytkownik jest zalogowany
@@ -148,22 +133,25 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
     }
 
     const body = await request.json();
-    const validatedData = updateFlashcardSchema.parse(body);
+    const result = updateFlashcardSchema.safeParse(body);
 
-    const flashcard = await flashcardService.updateFlashcard(
-      user.id,
-      flashcardId,
-      validatedData
-    );
-    return new Response(JSON.stringify(flashcard));
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (!result.success) {
       return new Response(
-        JSON.stringify({ error: "Validation error", details: error.errors }),
+        JSON.stringify({ error: "Invalid request data", issues: result.error.format() }),
         { status: 400 }
       );
     }
 
+    try {
+      const flashcard = await flashcardService.updateFlashcard(flashcardId, user.id, result.data);
+      return new Response(JSON.stringify(flashcard), { status: 200 });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
+        return new Response(JSON.stringify({ error: "Flashcard not found" }), { status: 404 });
+      }
+      throw error;
+    }
+  } catch (error) {
     logger.error("Error in PUT /api/flashcards:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
@@ -174,7 +162,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
 
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   try {
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
 
     // Sprawdzamy czy użytkownik jest zalogowany

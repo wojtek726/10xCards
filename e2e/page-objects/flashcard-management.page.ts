@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BasePage } from './base-page';
+import { TEST_CONFIG } from '../test.config';
 
 export class FlashcardManagementPage extends BasePage {
   constructor(page: Page) {
@@ -26,38 +28,85 @@ export class FlashcardManagementPage extends BasePage {
   // Navigation
   async navigateToFlashcards() {
     await this.goto('/flashcards');
+    await this.page.waitForLoadState('networkidle');
+    await this.waitForFlashcardsList();
   }
 
   // Actions
   async createNewFlashcard(front: string, back: string) {
-    await this.createButton.click();
-    await this.flashcardForm.waitFor({ state: 'visible' });
-    await this.frontInput.fill(front);
-    await this.backInput.fill(back);
-    await this.saveButton.click();
+    try {
+      await this.createButton.click();
+      await this.flashcardForm.waitFor({ state: 'visible', timeout: TEST_CONFIG.TIMEOUTS.ELEMENT });
+      
+      await this.frontInput.fill(front);
+      await this.backInput.fill(back);
+      
+      // Wait for form validation
+      await this.page.waitForTimeout(500);
+      
+      await this.saveButton.click();
+      
+      // Wait for success message
+      await expect(this.page.getByText('Flashcard created successfully')).toBeVisible({
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
+      });
+    } catch (error) {
+      console.error('Failed to create flashcard:', error);
+      await this.page.screenshot({ path: 'test-results/create-flashcard-error.png' });
+      throw error;
+    }
   }
 
   async editFlashcard(index: number, front: string, back: string) {
-    const editButtons = await this.editButton.all();
-    if (index < editButtons.length) {
+    try {
+      const editButtons = await this.editButton.all();
+      if (index >= editButtons.length) {
+        throw new Error(`Flashcard at index ${index} does not exist`);
+      }
+
       await editButtons[index].click();
-      await this.flashcardForm.waitFor({ state: 'visible' });
+      await this.flashcardForm.waitFor({ state: 'visible', timeout: TEST_CONFIG.TIMEOUTS.ELEMENT });
+      
+      await this.frontInput.clear();
       await this.frontInput.fill(front);
+      await this.backInput.clear();
       await this.backInput.fill(back);
+      
+      // Wait for form validation
+      await this.page.waitForTimeout(500);
+      
       await this.saveButton.click();
-    } else {
-      throw new Error(`Flashcard at index ${index} does not exist`);
+      
+      // Wait for success message
+      await expect(this.page.getByText('Flashcard updated successfully')).toBeVisible({
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
+      });
+    } catch (error) {
+      console.error('Failed to edit flashcard:', error);
+      await this.page.screenshot({ path: 'test-results/edit-flashcard-error.png' });
+      throw error;
     }
   }
 
   async deleteFlashcard(index: number) {
-    const deleteButtons = await this.deleteButton.all();
-    if (index < deleteButtons.length) {
+    try {
+      const deleteButtons = await this.deleteButton.all();
+      if (index >= deleteButtons.length) {
+        throw new Error(`Flashcard at index ${index} does not exist`);
+      }
+
       await deleteButtons[index].click();
-      await this.confirmDeleteButton.waitFor({ state: 'visible' });
+      await this.confirmDeleteButton.waitFor({ state: 'visible', timeout: TEST_CONFIG.TIMEOUTS.ELEMENT });
       await this.confirmDeleteButton.click();
-    } else {
-      throw new Error(`Flashcard at index ${index} does not exist`);
+      
+      // Wait for success message
+      await expect(this.page.getByText('Flashcard deleted successfully')).toBeVisible({
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
+      });
+    } catch (error) {
+      console.error('Failed to delete flashcard:', error);
+      await this.page.screenshot({ path: 'test-results/delete-flashcard-error.png' });
+      throw error;
     }
   }
 
@@ -77,18 +126,29 @@ export class FlashcardManagementPage extends BasePage {
 
   // State checks
   async getFlashcardsCount() {
+    await this.waitForFlashcardsList();
     return await this.flashcardItems.count();
   }
 
   async getFlashcardContent(index: number) {
-    const items = await this.flashcardItems.all();
-    if (index < items.length) {
+    try {
+      await this.waitForFlashcardsList();
+      const items = await this.flashcardItems.all();
+      
+      if (index >= items.length) {
+        throw new Error(`Flashcard at index ${index} does not exist`);
+      }
+
       const item = items[index];
       const front = await item.getByTestId('flashcard-front').textContent();
       const back = await item.getByTestId('flashcard-back').textContent();
+      
       return { front, back };
+    } catch (error) {
+      console.error('Failed to get flashcard content:', error);
+      await this.page.screenshot({ path: 'test-results/get-content-error.png' });
+      throw error;
     }
-    return null;
   }
 
   async isFlashcardsListVisible() {
@@ -112,20 +172,38 @@ export class FlashcardManagementPage extends BasePage {
 
   // Wait conditions
   async waitForFlashcardsList() {
-    await this.flashcardsList.waitFor({ state: 'visible' });
+    try {
+      await this.flashcardsList.waitFor({ 
+        state: 'visible', 
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT 
+      });
+    } catch (error) {
+      // If the list is not visible, check if we have the no results message
+      const hasNoResults = await this.noResultsMessage.isVisible();
+      if (!hasNoResults) {
+        throw error;
+      }
+    }
   }
 
   async waitForFlashcardForm() {
     await this.flashcardForm.waitFor({ state: 'visible' });
   }
 
-  async waitForFlashcardsCount(count: number) {
-    await this.page.waitForFunction(
-      (expectedCount) => {
-        const items = document.querySelectorAll('[data-testid="flashcard-item"]');
-        return items.length === expectedCount;
-      },
-      count
-    );
+  async waitForFlashcardsCount(expectedCount: number) {
+    try {
+      await this.page.waitForFunction(
+        (count) => {
+          const items = document.querySelectorAll('[data-testid="flashcard-item"]');
+          return items.length === count;
+        },
+        expectedCount,
+        { timeout: TEST_CONFIG.TIMEOUTS.ELEMENT }
+      );
+    } catch (error) {
+      console.error(`Failed to wait for flashcard count (expected: ${expectedCount}):`, error);
+      await this.page.screenshot({ path: `test-results/wait-count-error-${expectedCount}.png` });
+      throw error;
+    }
   }
 } 

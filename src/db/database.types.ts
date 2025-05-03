@@ -1,95 +1,77 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export interface Database {
-  graphql_public: {
-    Tables: Record<never, never>;
-    Views: Record<never, never>;
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-          extensions?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: Record<never, never>;
-    CompositeTypes: Record<never, never>;
-  };
   public: {
     Tables: {
       flashcards: {
         Row: {
-          back: string;
-          card_origin: Database["public"]["Enums"]["card_origin_enum"];
-          created_at: string;
-          front: string;
-          id: string;
-          updated_at: string;
-          user_id: string;
-        };
+          id: string
+          created_at: string
+          updated_at: string
+          front: string
+          back: string
+          user_id: string
+          card_origin: 'manual' | 'ai' | 'ai_modified'
+        }
         Insert: {
-          back: string;
-          card_origin: Database["public"]["Enums"]["card_origin_enum"];
-          created_at?: string;
-          front: string;
-          id?: string;
-          updated_at?: string;
-          user_id: string;
-        };
+          id?: string
+          created_at?: string
+          updated_at?: string
+          front: string
+          back: string
+          user_id: string
+          card_origin?: 'manual' | 'ai' | 'ai_modified'
+        }
         Update: {
-          back?: string;
-          card_origin?: Database["public"]["Enums"]["card_origin_enum"];
-          created_at?: string;
-          front?: string;
-          id?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
+          id?: string
+          created_at?: string
+          updated_at?: string
+          front?: string
+          back?: string
+          user_id?: string
+          card_origin?: 'manual' | 'ai' | 'ai_modified'
+        }
         Relationships: [
           {
-            foreignKeyName: "flashcards_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+            foreignKeyName: "flashcards_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       users: {
         Row: {
-          created_at: string;
-          hash_password: string;
-          id: string;
-          email: string;
-          updated_at: string;
-        };
+          id: string
+          created_at: string
+          email: string
+          role: string
+        }
         Insert: {
-          created_at?: string;
-          hash_password: string;
-          id?: string;
-          email: string;
-          updated_at?: string;
-        };
+          id: string
+          created_at?: string
+          email: string
+          role?: string
+        }
         Update: {
-          created_at?: string;
-          hash_password?: string;
-          id?: string;
-          email?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-    };
-    Views: Record<never, never>;
-    Functions: Record<never, never>;
-    Enums: {
-      card_origin_enum: "manual" | "ai" | "ai_modified";
-    };
-    CompositeTypes: Record<never, never>;
-  };
+          id?: string
+          created_at?: string
+          email?: string
+          role?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: Record<string, unknown>
+    Functions: Record<string, unknown>
+    Enums: Record<string, unknown>
+  }
 }
 
 type DefaultSchema = Database[Extract<keyof Database, "public">];

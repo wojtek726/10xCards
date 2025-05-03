@@ -14,8 +14,9 @@ export default function Navbar({ user }: NavbarProps) {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+      logger.debug("Starting logout process");
       
-      // Request with proper headers for cache busting
+      // First, call the API endpoint
       const response = await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
@@ -30,18 +31,29 @@ export default function Navbar({ user }: NavbarProps) {
         throw new Error("Wystąpił błąd podczas wylogowywania");
       }
 
-      // Clear local and session storage
+      logger.debug("Logout API call successful");
+
+      // Clear local storage
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Dodajemy krótkie opóźnienie przed przekierowaniem
-      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Przekierowanie bez wymuszonego przeładowania
-      window.location.assign("/auth/login?logout=true");
+      // Clear cookies manually
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.split('=');
+        if (name) {
+          const trimmedName = name.trim();
+          document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        }
+      });
+
+      logger.debug("Local storage and cookies cleared");
+      
+      // Force a full page reload to clear any remaining state
+      window.location.href = "/auth/login?logout=true";
     } catch (error) {
       logger.error("Błąd podczas wylogowywania:", error);
       setIsLoggingOut(false);
+      alert("Wystąpił błąd podczas wylogowywania. Spróbuj odświeżyć stronę.");
     }
   };
 
@@ -104,6 +116,7 @@ export default function Navbar({ user }: NavbarProps) {
                 variant="outline" 
                 onClick={handleLogout} 
                 disabled={isLoggingOut}
+                data-testid="logout-button"
               >
                 {isLoggingOut ? "Wylogowywanie..." : "Wyloguj"}
               </Button>

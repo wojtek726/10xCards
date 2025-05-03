@@ -22,7 +22,8 @@ register({
 // Cookie names
 const AUTH_COOKIE_NAMES = {
   accessToken: 'sb-access-token',
-  refreshToken: 'sb-refresh-token'
+  refreshToken: 'sb-refresh-token',
+  authCookie: 'supabase-auth-token'
 };
 
 // Test user data
@@ -63,6 +64,51 @@ export const test = pageTest.extend<TestFixtures>({
     // Set navigation timeouts
     page.setDefaultNavigationTimeout(10000);
     page.setDefaultTimeout(10000);
+    
+    // Mock login API endpoint
+    await page.route('**/api/auth/login', async route => {
+      const request = route.request();
+      const body = JSON.parse(await request.postData() || '{}');
+      
+      // Check if this is a test user login attempt
+      if (body.email && body.email.startsWith('test-') && body.email.endsWith('@example.com')) {
+        const testUser = {
+          id: `test-user-${Date.now()}`,
+          email: body.email,
+          access_token: `test-access-token-${Date.now()}`,
+          refresh_token: `test-refresh-token-${Date.now()}`
+        };
+        
+        route.fulfill({
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': [
+              `${AUTH_COOKIE_NAMES.accessToken}=${testUser.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+              `${AUTH_COOKIE_NAMES.refreshToken}=${testUser.refresh_token}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+              `${AUTH_COOKIE_NAMES.authCookie}=${JSON.stringify({
+                access_token: testUser.access_token,
+                refresh_token: testUser.refresh_token
+              })}; Path=/; HttpOnly; Secure; SameSite=Lax`
+            ].join(', ')
+          },
+          body: JSON.stringify({
+            user: {
+              id: testUser.id,
+              email: testUser.email
+            },
+            session: {
+              access_token: testUser.access_token,
+              refresh_token: testUser.refresh_token,
+              expires_in: 3600
+            }
+          })
+        });
+        return;
+      }
+      
+      route.continue();
+    });
     
     if (isAuthenticated) {
       // Navigate to the app domain first

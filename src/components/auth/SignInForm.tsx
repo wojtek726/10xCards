@@ -1,72 +1,86 @@
-'use client';
-
+import { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { authSchemas } from "@/lib/validation/auth.schema";
-import { AuthService } from "@/lib/services/auth.service";
-import { useAuthForm } from "@/hooks/useAuthForm";
-import { useEffect, useRef, useState } from "react";
-import type { z } from "zod";
-import { useHydration, useFormMounting } from "@/hooks/useHydration";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-type FormValues = z.infer<typeof authSchemas.login>;
+const loginSchema = z.object({
+  email: z.string().email("Nieprawidłowy adres email"),
+  password: z.string().min(8, "Hasło musi mieć minimum 8 znaków"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface SignInFormProps {
   redirectTo?: string;
 }
 
-export function SignInForm({ redirectTo = '' }: SignInFormProps) {
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  
-  const { form, isLoading, error, handleSubmit } = useAuthForm<FormValues>({
-    schema: authSchemas.login,
+export function SignInForm({ redirectTo = '/flashcards' }: SignInFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
     defaultValues: {
       email: "",
-      password: ""
-    },
-    onSubmit: async (data) => {
-      try {
-        await AuthService.signIn(data);
-        
-        // Użyj przekazanego redirectTo lub pobierz z parametrów URL
-        let destination = redirectTo;
-        if (!destination) {
-          const params = new URLSearchParams(window.location.search);
-          destination = params.get('redirect') || params.get('redirectTo') || '/flashcards';
-        }
-        
-        // Set redirecting state to show loading in the UI
-        setIsRedirecting(true);
-        
-        // Wait for cookies to be set
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Force page reload to ensure new session is loaded
-        window.location.href = destination;
-      } catch (error) {
-        // Error is handled by useAuthForm
-      }
+      password: "",
     },
   });
 
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formState: { errors, isValid } } = form;
 
-  useHydration();
-  useFormMounting(formRef);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = form.getValues();
 
-  useEffect(() => {
-    // Add hydration marker to root element
-    document.documentElement.setAttribute('data-hydrated', 'true');
-    
-    return () => {
-      document.documentElement.removeAttribute('data-hydrated');
-    };
-  }, []);
+    if (!isValid) {
+      return;
+    }
 
-  const hasEmptyFields = !form.getValues('email') || !form.getValues('password');
-  const isBusy = isLoading || isRedirecting;
+    try {
+      setError(null);
+      setIsSubmitting(true);
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Wystąpił błąd podczas logowania');
+      }
+      
+      // Redirect after successful login
+      window.location.href = redirectTo;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Wystąpił nieznany błąd podczas logowania';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -76,11 +90,10 @@ export function SignInForm({ redirectTo = '' }: SignInFormProps) {
       <CardContent>
         <Form {...form}>
           <form 
-            onSubmit={handleSubmit} 
+            onSubmit={handleSubmit}
             className="space-y-4" 
             data-testid="login-form" 
             ref={formRef}
-            aria-busy={isBusy}
           >
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
@@ -98,16 +111,12 @@ export function SignInForm({ redirectTo = '' }: SignInFormProps) {
                     <Input
                       placeholder="twoj@email.com"
                       type="email"
-                      disabled={isBusy}
-                      data-testid="email-input"
-                      aria-describedby="email-description"
+                      disabled={isSubmitting}
+                      data-testid="email"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage id="email-description" />
-                  <div className="text-xs text-muted-foreground" id="email-hint">
-                    Wprowadź poprawny adres email
-                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -122,16 +131,12 @@ export function SignInForm({ redirectTo = '' }: SignInFormProps) {
                     <Input
                       placeholder="Minimum 8 znaków"
                       type="password"
-                      disabled={isBusy}
-                      data-testid="password-input"
-                      aria-describedby="password-description"
+                      disabled={isSubmitting}
+                      data-testid="password"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage id="password-description" />
-                  <div className="text-xs text-muted-foreground" id="password-hint">
-                    Hasło musi mieć minimum 8 znaków
-                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -139,10 +144,17 @@ export function SignInForm({ redirectTo = '' }: SignInFormProps) {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isBusy || hasEmptyFields}
-              data-testid="login-submit"
+              disabled={isSubmitting || !isValid}
+              data-testid="submit"
             >
-              {isBusy ? "Logowanie..." : "Zaloguj się"}
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Logowanie...
+                </span>
+              ) : (
+                "Zaloguj się"
+              )}
             </Button>
           </form>
         </Form>

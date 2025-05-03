@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabaseClient, createSupabaseServerInstance } from '@/db/supabase.client';
-import { logger } from '@/lib/utils/logger';
+import { createServerClient } from '@/db/supabase.client';
+import { logger } from '@/lib/services/logger.service';
 import { z } from 'zod';
 
 // Ensure API route is not prerendered and processed as a server endpoint
@@ -14,8 +14,7 @@ const updatePasswordSchema = z.object({
 
 export const PUT: APIRoute = async ({ request, cookies }) => {
   try {
-    // Używamy instancji serwera z cookies do autoryzacji
-    const supabase = createSupabaseServerInstance({ request, cookies });
+    const supabase = createServerClient(cookies);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

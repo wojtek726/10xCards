@@ -1,13 +1,9 @@
 import type { APIRoute } from 'astro';
 import type { AstroCookies } from 'astro';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient } from '../../../db/supabase.client';
 import { FlashcardService } from '../../../lib/services/flashcard.service';
 import { z } from 'zod';
 import { logger } from '../../../lib/utils/logger';
-import type { Database } from '../../../db/database.types';
-
-const supabaseUrl = import.meta.env.SUPABASE_URL || import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY || import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
 export const prerender = false;
 
@@ -24,17 +20,7 @@ interface APIContext {
 
 export async function PUT({ request, cookies, params }: APIContext) {
   try {
-    const supabase = createServerClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          get: (key) => cookies.get(key)?.value,
-          set: (key, value, options) => cookies.set(key, value, options),
-          remove: (key, options) => cookies.delete(key, options),
-        },
-      }
-    );
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -88,17 +74,7 @@ export async function PUT({ request, cookies, params }: APIContext) {
 
 export const DELETE: APIRoute = async ({ params, cookies }) => {
   try {
-    const supabase = createServerClient<Database>(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        cookies: {
-          get: (key) => cookies.get(key)?.value,
-          set: (key, value, options) => cookies.set(key, value, options),
-          remove: (key, options) => cookies.delete(key, options),
-        },
-      }
-    );
+    const supabase = createServerClient(cookies);
     const flashcardService = new FlashcardService(supabase);
     
     // Get user from auth

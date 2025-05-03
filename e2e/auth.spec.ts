@@ -1,6 +1,7 @@
 import { test } from './fixtures/page-objects';
 import { mockAuthApi } from './mocks/auth-api';
 import { expect } from '@playwright/test';
+import { TEST_TAGS } from './test.config';
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,7 +9,7 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Login', () => {
-    test('shows error message on failed login with invalid email', async ({ loginPage }) => {
+    test(`${TEST_TAGS.SMOKE} shows error message on failed login with invalid email`, async ({ loginPage }) => {
       await loginPage.goto();
       await loginPage.login('invalid-email', 'password123');
       await loginPage.expectErrorMessage('Invalid email format');
@@ -20,14 +21,14 @@ test.describe('Authentication', () => {
       await loginPage.expectErrorMessage('Invalid login credentials');
     });
 
-    test('successful login redirects to flashcards', async ({ page, loginPage }) => {
+    test(`${TEST_TAGS.CRITICAL} successful login redirects to flashcards`, async ({ page, loginPage }) => {
       await loginPage.goto();
       await loginPage.login('test@example.com', 'password123');
       await loginPage.expectSuccessMessage('Login successful');
       await expect(page).toHaveURL('/flashcards');
     });
 
-    test('shows loading state during login', async ({ loginPage, page }) => {
+    test(`${TEST_TAGS.REGRESSION} shows loading state during login`, async ({ loginPage, page }) => {
       await loginPage.goto();
       await loginPage.fillEmail('test@example.com');
       await loginPage.fillPassword('password123');
@@ -51,13 +52,13 @@ test.describe('Authentication', () => {
       await signupPage.expectPasswordMismatchError();
     });
 
-    test('validates password length', async ({ signupPage }) => {
+    test(`${TEST_TAGS.SMOKE} validates password requirements`, async ({ signupPage }) => {
       await signupPage.goto();
       await signupPage.signup('test@example.com', 'short', 'short');
       await signupPage.expectPasswordLengthError();
     });
 
-    test('successful registration redirects to flashcards', async ({ page, signupPage }) => {
+    test(`${TEST_TAGS.CRITICAL} successful registration redirects to flashcards`, async ({ page, signupPage }) => {
       await signupPage.goto();
       await signupPage.signup('newuser@example.com', 'password123', 'password123');
       await signupPage.expectSuccessMessage('Registration successful');

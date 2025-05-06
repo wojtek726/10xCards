@@ -96,6 +96,18 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     try {
       // Tworzenie instancji supabase z uprawnieniami administratora
       logger.info("Tworzenie instancji administratora Supabase z uprawnieniami service_role");
+      
+      if (!import.meta.env.SUPABASE_SERVICE_ROLE_KEY) {
+        logger.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+        return new Response(
+          JSON.stringify({ 
+            error: "Błąd konfiguracji serwera", 
+            details: "Missing service role key"
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      
       const adminSupabase = createServerClient(cookies, true);
       
       // Wykonujemy zapytanie SQL bezpośrednio, aby zapewnić prawidłową kolejność usuwania
@@ -155,13 +167,15 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       
       // 3. Na końcu usuwamy użytkownika z Supabase Auth
       logger.info("Wywołanie admin.deleteUser aby usunąć użytkownika z auth.users", { userId });
-      const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+      const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId, false);
 
       if (deleteError) {
         logger.error("Błąd podczas usuwania konta użytkownika z auth.users", {
           userId,
           error: deleteError.message,
-          code: deleteError.code
+          code: deleteError.code,
+          serviceRolePresent: !!import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+          clientType: adminSupabase.auth.admin ? 'admin' : 'regular'
         });
 
         return new Response(

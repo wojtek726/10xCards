@@ -15,6 +15,7 @@ const isDevelopment = siteUrl.includes('localhost') || siteUrl.includes('127.0.0
 logger.info("Initializing Supabase with URL:", supabaseUrl);
 logger.info("Site URL:", siteUrl);
 logger.info("Environment:", isDevelopment ? "Development" : "Production");
+logger.info("Service role key present:", !!import.meta.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Always require Supabase credentials
 if (!supabaseUrl || !supabaseKey) {
@@ -85,12 +86,24 @@ export function getAllCookies(cookieHeader: string): Record<string, string> {
 export function createServerClient(cookies: AstroCookies, useServiceRole = false) {
   logger.debug("[Supabase] Creating server client with cookies present");
 
-  const key = useServiceRole ? (process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey) : supabaseKey;
+  const key = useServiceRole ? import.meta.env.SUPABASE_SERVICE_ROLE_KEY : supabaseKey;
+  
+  if (useServiceRole && !key) {
+    logger.error("[Supabase] Service role key is missing but was requested");
+    throw new Error("Service role key is required but not available");
+  }
+
+  logger.debug("[Supabase] Creating client with key type:", useServiceRole ? "service_role" : "public");
 
   return createSupabaseServerClient<Database>(
     supabaseUrl,
-    key,
+    key as string,
     {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      },
       cookies: {
         get: (key) => cookies.get(key)?.value,
         set: (key, value, options) => setSecureCookies(cookies, key, value, options),

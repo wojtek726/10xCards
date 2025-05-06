@@ -27,19 +27,14 @@ Ręczne tworzenie fiszek edukacyjnych jest czasochłonne i wymaga dużego zaanga
      b. Użytkownik może zalogować się przy użyciu swoich poświadczeń.
      c. Użytkownik ma możliwość zmiany hasła oraz usunięcia konta.
 
-4. Integracja z algorytmem powtórek (US-004)
-   - Opis: Akceptowane fiszki są integrowane z open-source'owym algorytmem powtórek, co umożliwia systematyczne powtarzanie materiału edukacyjnego.
-   - Kryteria akceptacji:
-     a. Po akceptacji fiszki, jej zawartość oraz znaczniki czasu są przekazywane do modułu powtórek.
-     b. Algorytm powtórek wykorzystuje przekazane dane do generowania harmonogramu powtórek.
 
-5. Logowanie działań i monitorowanie (US-005)
+4. Logowanie działań i monitorowanie (US-004)
    - Opis: System rejestruje wszystkie działania użytkownika związane z tworzeniem i weryfikacją fiszek, w tym akceptację fiszek, wraz z informacjami o czasie.
    - Kryteria akceptacji:
      a. System zapisuje zawartość zaakceptowanych fiszek wraz ze znacznikami czasu.
      b. Statystyki dotyczące liczby zaakceptowanych fiszek są dostępne do dalszej analizy.
 
-6. Odrzucenie fiszki (US-006)
+5. Odrzucenie fiszki (US-005)
    - Opis: Użytkownik ma możliwość odrzucenia fiszki wygenerowanej przez AI, jeśli jej treść nie spełnia oczekiwań.
    - Kryteria akceptacji:
      a. Użytkownik może odrzucić fiszkę natychmiast po jej wygenerowaniu.

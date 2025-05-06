@@ -28,6 +28,23 @@
 - GitHub Actions
 - DigitalOcean (Docker based hosting)
 
+## Project Structure
+- `./src` - Source code
+- `./src/layouts` - Astro layouts
+- `./src/pages` - Astro pages
+- `./src/pages/api` - API endpoints
+- `./src/middleware/index.ts` - Astro middleware
+- `./src/db` - Supabase clients and types
+- `./src/types.ts` - Shared types for backend and frontend (Entities, DTOs)
+- `./src/components` - Client-side components written in Astro (static) and React (dynamic)
+- `./src/components/ui` - Client-side components from Shadcn/ui
+- `./src/lib` - Services and helpers
+- `./src/__tests__` - Component tests
+- `./src/lib/services/__tests__` - Service tests
+- `./src/pages/api/__tests__` - API endpoint tests
+- `./e2e` - End-to-end tests
+- `./tests` - Test utilities and examples
+
 ## Getting Started Locally
 1. Clone the repository:
    ```bash
@@ -53,6 +70,7 @@
 
 ## Available Scripts
 - `npm run dev` – Start the development server.
+- `npm run dev:test` – Start the development server with host flag.
 - `npm run build` – Build the project for production.
 - `npm run preview` – Preview the production build.
 - `npm run astro` – Run Astro commands.
@@ -63,39 +81,53 @@
 - `npm run test:watch` – Run tests in watch mode.
 - `npm run test:ui` – Run tests with Vitest UI.
 - `npm run test:coverage` – Generate test coverage report.
-- `npm run test:e2e` – Run end-to-end tests with Playwright.
+- `npm run test:e2e` – Run all end-to-end tests with Playwright.
+- `npm run test:e2e:basic` – Run basic end-to-end tests.
+- `npm run test:e2e:ci` – Run CI-specific end-to-end tests.
+- `npm run test:e2e:smoke` – Run smoke tests.
+- `npm run test:e2e:critical` – Run critical path tests.
+- `npm run test:e2e:regression` – Run regression tests.
 - `npm run test:e2e:ui` – Run Playwright tests with UI.
 - `npm run test:e2e:debug` – Debug Playwright tests.
+- `npm run test:e2e:visual` – Run visual tests.
+- `npm run test:e2e:auth` – Run authentication tests.
+- `npm run test:e2e:flashcards` – Run flashcard management tests.
+- `npm run test:e2e:update-snapshots` – Update test snapshots.
 
 ## Testing Framework
 
 ### Unit Testing with Vitest
-We use Vitest for unit and integration testing. Tests are located in the same directory as the code they test, with the `.test.ts` or `.test.tsx` extension.
+We use Vitest for unit and integration testing. Tests are located in the `__tests__` directories throughout the codebase, with the `.test.ts` or `.test.tsx` extension.
 
 Key features:
 - Fast test execution with watch mode
 - UI interface for test exploration
 - Coverage reporting
 - Compatible with Jest API
+- MSW (Mock Service Worker) for API mocking
 
 ### E2E Testing with Playwright
 End-to-end tests use Playwright and follow the Page Object Model pattern. Tests are located in the `e2e` directory.
 
 Key features:
-- Single browser testing (Chromium)
-- Screenshot testing
+- Chromium browser testing
+- Screenshot and visual testing
 - Trace viewer for debugging
 - Page Object Model for maintainable tests
 - Parallel test execution
+- Project-based test organization (smoke, critical, regression)
 
 Both testing frameworks follow the Arrange-Act-Assert pattern for clear and readable tests.
 
-## Project Scope
+## Key Features
 - **User Management:** Securely register, log in, change password, and delete account.
 - **Flashcards:** Personal sets of flashcards unique to each user.
+- **AI-Generated Flashcards:** Create flashcards automatically from any text input.
+- **Manual Flashcard Creation:** Add, edit, and delete flashcards manually.
+- **Flashcard Origin Tracking:** Track whether flashcards are AI-generated, AI-modified, or manually created.
 
 ## Project Status
-Currently, the project is in its early stages (version 0.0.1) with active development and testing.
+Currently, the project is in active development with comprehensive test coverage to ensure functionality.
 
 ## License
 No specific license has been provided. Please contact the maintainers for further information. 

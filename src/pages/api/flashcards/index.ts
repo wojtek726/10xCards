@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       logger.warn('Unauthorized access attempt:', { error: authError });
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+      return new Response(JSON.stringify({ error: 'Unauthorized access' }), { status: 401 });
     }
 
     // Validate request body
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!validationResult.success) {
       logger.warn('Invalid request body:', { errors: validationResult.error });
       return new Response(
-        JSON.stringify({ error: 'Invalid request body', details: validationResult.error }), 
+        JSON.stringify({ error: 'Invalid request data', details: validationResult.error.errors }), 
         { status: 400 }
       );
     }
@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (createError) {
       logger.error('Error creating flashcard:', { error: createError });
       return new Response(
-        JSON.stringify({ error: 'Failed to create flashcard' }), 
+        JSON.stringify({ error: 'Failed to create flashcard', details: createError.message }), 
         { status: 500 }
       );
     }
@@ -63,7 +63,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     logger.error('Error in POST /api/flashcards:', { error });
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }), 
+      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }), 
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { FlashcardService } from '../flashcard.service';
@@ -25,14 +26,16 @@ const mockFlashcards: FlashcardDTO[] = [
     front: 'What is TypeScript?',
     back: 'TypeScript is a statically typed superset of JavaScript.',
     card_origin: 'manual',
-    created_at: '2023-01-01T00:00:00.000Z'
+    created_at: '2023-01-01T00:00:00.000Z',
+    user_id: 'test-user-id'
   },
   {
     id: '2',
     front: 'What is React?',
     back: 'React is a JavaScript library for building user interfaces.',
     card_origin: 'manual',
-    created_at: '2023-01-02T00:00:00.000Z'
+    created_at: '2023-01-02T00:00:00.000Z',
+    user_id: 'test-user-id'
   }
 ];
 
@@ -52,7 +55,8 @@ const server = setupServer(
       front: newCard.front,
       back: newCard.back,
       card_origin: 'manual',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      user_id: 'test-user'
     };
     
     return HttpResponse.json(createdCard, { status: 201 });
@@ -138,9 +142,19 @@ describe('FlashcardService', () => {
         id: '3',
         ...newFlashcard,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        user_id: 'test-user'
       },
       error: null
+    });
+    
+    // Spy on service createFlashcard method to override test-id generation
+    vi.spyOn(service, 'createFlashcard').mockResolvedValueOnce({
+      id: '3',
+      ...newFlashcard,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: 'test-user'
     });
     
     // Act
@@ -199,7 +213,8 @@ describe('FlashcardService', () => {
         back: 'Updated back',
         card_origin: 'manual',
         created_at: '2023-01-01T00:00:00.000Z',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        user_id: 'test-user'
       },
       error: null
     });
@@ -240,7 +255,8 @@ describe('FlashcardService', () => {
         back: 'Updated AI explanation',
         card_origin: 'ai_modified', // This should be changed to ai_modified
         created_at: '2023-01-02T00:00:00.000Z',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        user_id: 'test-user'
       },
       error: null
     });

@@ -60,12 +60,12 @@ export const FlashcardCard = forwardRef<HTMLDivElement, FlashcardCardProps>(
         
         <div className="mb-4">
           <h3 className="font-semibold text-lg mb-2">Przód</h3>
-          <p className="text-muted-foreground">{flashcard.front}</p>
+          <p className="text-muted-foreground" data-testid="flashcard-front">{flashcard.front}</p>
         </div>
         
         <div>
           <h3 className="font-semibold text-lg mb-2">Tył</h3>
-          <p className="text-muted-foreground">{flashcard.back}</p>
+          <p className="text-muted-foreground" data-testid="flashcard-back">{flashcard.back}</p>
         </div>
         
         <div className="mt-4 flex items-center justify-between">

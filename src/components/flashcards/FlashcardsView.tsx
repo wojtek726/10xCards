@@ -42,8 +42,8 @@ export function FlashcardsView({ flashcards: initialFlashcards }: FlashcardsView
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create flashcard');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create flashcard');
       }
 
       const created = await response.json();

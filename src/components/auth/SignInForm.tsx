@@ -21,6 +21,7 @@ interface SignInFormProps {
 export function SignInForm({ redirectTo = '/flashcards' }: SignInFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -49,6 +50,7 @@ export function SignInForm({ redirectTo = '/flashcards' }: SignInFormProps) {
 
     try {
       setError(null);
+      setSuccess(null);
       setIsSubmitting(true);
 
       const response = await fetch('/api/auth/login', {
@@ -67,6 +69,12 @@ export function SignInForm({ redirectTo = '/flashcards' }: SignInFormProps) {
       if (!response.ok) {
         throw new Error(data.error || 'Wystąpił błąd podczas logowania');
       }
+      
+      // Show success message
+      setSuccess('Login successful');
+      
+      // Wait for a moment to show the success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Redirect after successful login
       window.location.href = redirectTo;
@@ -98,6 +106,12 @@ export function SignInForm({ redirectTo = '/flashcards' }: SignInFormProps) {
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md" data-testid="error-message">
                 {error}
+              </div>
+            )}
+            
+            {success && (
+              <div className="p-3 text-sm text-green-500 bg-green-50 rounded-md" data-testid="success-message">
+                {success}
               </div>
             )}
 

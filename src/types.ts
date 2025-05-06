@@ -70,7 +70,6 @@ export interface DeleteAccountResponseDTO {
 // -------------------------
 
 // Base Flashcard DTO representing flashcard details from the database.
-// Note: We omit the user_id field since it is managed via session context.
 export interface FlashcardDTO {
   id: string;
   front: string;
@@ -78,6 +77,7 @@ export interface FlashcardDTO {
   card_origin: CardOrigin;
   created_at: string;
   updated_at?: string;
+  user_id: string;
 }
 
 // Brief Flashcard DTO for list responses (excludes updated_at).

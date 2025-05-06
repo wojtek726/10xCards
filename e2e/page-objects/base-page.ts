@@ -12,49 +12,122 @@ export abstract class BasePage {
     }
   }
 
+  protected async ensureAuthentication(): Promise<boolean> {
+    try {
+      // Wait for user menu to be visible
+      await this.page.waitForSelector('[data-testid="user-menu"]', {
+        state: 'visible',
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
+      });
+
+      // Check if we're on the login page
+      if (this.page.url().includes('/auth/login')) {
+        console.warn('Redirected to login page, authentication failed');
+        await this.logPageState('auth-failed');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      await this.logPageState('auth-check-failed');
+      return false;
+    }
+  }
+
   protected async waitForHydration(timeout = TEST_CONFIG.TIMEOUTS.HYDRATION): Promise<boolean> {
     if (!(await this.isPageValid())) {
-      console.warn('Cannot check hydration: page is closed or invalid');
+      console.warn('Cannot wait for hydration: page is closed or invalid');
       return false;
     }
 
     const start = Date.now();
     try {
-      // Wait for initial page load
-      await this.page.waitForLoadState('domcontentloaded', { 
-        timeout: timeout / 2 
-      });
-      
-      // Wait for network to be idle
-      await this.page.waitForLoadState('networkidle', { 
-        timeout: timeout / 2 
-      });
-
       // Wait for hydration attribute
-      await this.page.waitForFunction(
-        (hydrationAttr: string) => document.documentElement.hasAttribute(hydrationAttr),
-        TEST_CONFIG.ATTRIBUTES.HYDRATED,
-        { timeout: timeout / 2 }
-      );
+      await this.page.waitForSelector(`[${TEST_CONFIG.ATTRIBUTES.HYDRATED}]`, {
+        state: 'attached',
+        timeout: timeout / 2
+      });
 
-      // Wait for any forms to be mounted
-      const forms = await this.page.locator('form').count();
-      if (forms > 0) {
-        await this.page.waitForFunction(
-          (mountedAttr: string) => {
-            const forms = document.querySelectorAll('form');
-            return Array.from(forms).some(form => form.hasAttribute(mountedAttr));
-          },
-          TEST_CONFIG.ATTRIBUTES.MOUNTED,
-          { timeout: timeout / 2 }
-        );
+      // Wait for any loading spinners to disappear
+      const spinners = this.page.locator('[role="progressbar"]');
+      const spinnerCount = await spinners.count();
+      
+      if (spinnerCount > 0) {
+        await spinners.first().waitFor({ state: 'hidden', timeout: timeout / 2 });
       }
 
       return true;
     } catch (error) {
       console.error(`Hydration timeout after ${Date.now() - start}ms:`, error);
-      await this.safeScreenshot('hydration-timeout');
+      await this.logPageState('hydration-failed');
       return false;
+    }
+  }
+
+  protected async safeScreenshot(context: string): Promise<void> {
+    if (!(await this.isPageValid())) {
+      console.warn('Cannot take screenshot: page is closed or invalid');
+      return;
+    }
+
+    try {
+      await this.page.screenshot({
+        path: `test-results/${context}.png`,
+        fullPage: true
+      });
+    } catch (error) {
+      console.error(`Failed to take screenshot for ${context}:`, error);
+    }
+  }
+
+  protected async takeErrorScreenshot(context: string): Promise<void> {
+    if (!(await this.isPageValid())) {
+      console.warn('Cannot take error screenshot: page is closed or invalid');
+      return;
+    }
+
+    try {
+      // Take a screenshot
+      await this.safeScreenshot(`error-${context}`);
+
+      // Log current URL and page content
+      console.log('Current URL:', this.page.url());
+      console.log('Page content:', await this.page.content());
+
+      // Log console messages
+      console.log('Recent console messages:');
+      this.page.on('console', msg => {
+        console.log(`Browser console: ${msg.type()}: ${msg.text()}`);
+      });
+    } catch (error) {
+      console.error(`Failed to take error screenshot for ${context}:`, error);
+    }
+  }
+
+  protected async fillInput(selector: string, value: string): Promise<void> {
+    try {
+      // Wait for input to be visible and enabled
+      await this.page.waitForSelector(selector, {
+        state: 'visible',
+        timeout: TEST_CONFIG.TIMEOUTS.ELEMENT
+      });
+
+      // Clear existing value
+      await this.page.fill(selector, '');
+
+      // Type new value
+      await this.page.type(selector, value, { delay: 50 });
+
+      // Verify the value was set correctly
+      const inputValue = await this.page.inputValue(selector);
+      if (inputValue !== value) {
+        throw new Error(`Input value mismatch. Expected: ${value}, Got: ${inputValue}`);
+      }
+    } catch (error) {
+      console.error(`Failed to fill input ${selector}:`, error);
+      await this.takeErrorScreenshot('input-fill-failed');
+      throw error;
     }
   }
 
@@ -130,17 +203,6 @@ export abstract class BasePage {
     return false;
   }
 
-  protected async safeScreenshot(name: string): Promise<void> {
-    try {
-      await this.page.screenshot({ 
-        path: `test-results/${name}-${Date.now()}.png`,
-        fullPage: true 
-      });
-    } catch (error) {
-      console.error('Failed to take screenshot:', error);
-    }
-  }
-
   protected async logPageState(context: string): Promise<void> {
     try {
       // Take a screenshot
@@ -177,6 +239,24 @@ export abstract class BasePage {
     }
   }
 
+  // Dodatkowa metoda z dłuższym timeoutem dla wymagających elementów
+  protected async waitForElementExtended(
+    selector: string, 
+    state: 'attached' | 'detached' | 'visible' | 'hidden' = 'visible'
+  ): Promise<boolean> {
+    try {
+      await this.page.waitForSelector(selector, {
+        state,
+        timeout: 10000 // Bezpośrednia wartość zamiast stałej TEST_CONFIG
+      });
+      return true;
+    } catch (error) {
+      console.error(`Failed to find element ${selector} with extended timeout:`, error);
+      await this.logPageState('element-extended-wait-failed');
+      return false;
+    }
+  }
+
   protected async goto(path: string): Promise<boolean> {
     try {
       await this.page.goto(path, {
@@ -202,16 +282,16 @@ export abstract class BasePage {
       // First wait for navigation with timeout
       await this.page.waitForURL(url, { 
         waitUntil: 'domcontentloaded', 
-        timeout: 5000 
+        timeout: TEST_CONFIG.TIMEOUTS.RETRY
       });
 
       // Then wait for network to be idle with same timeout
       await this.page.waitForLoadState('networkidle', { 
-        timeout: 5000 
+        timeout: TEST_CONFIG.TIMEOUTS.RETRY
       });
 
       // Finally wait for hydration with same timeout
-      await this.waitForHydration(5000);
+      await this.waitForHydration(TEST_CONFIG.TIMEOUTS.RETRY);
 
       return true;
     } catch (error) {
@@ -223,20 +303,6 @@ export abstract class BasePage {
 
   protected async waitForLoadingSpinner(selector: string) {
     await this.waitForElement(selector);
-  }
-
-  protected async fillInput(selector: string, value: string) {
-    if (await this.waitForElement(selector)) {
-      const element = this.page.locator(selector);
-      await element.fill(value);
-      
-      // Verify the value was actually set
-      const actualValue = await element.inputValue();
-      if (actualValue !== value) {
-        console.error(`Failed to set input value. Expected: ${value}, Got: ${actualValue}`);
-        await this.logPageState('input-fill-failed');
-      }
-    }
   }
 
   protected async clickButton(selector: string) {
@@ -265,7 +331,7 @@ export abstract class BasePage {
         console.error(`${errorPrefix} attempt ${attempt} failed:`, error);
         
         if (attempt < maxAttempts) {
-          await this.page.waitForTimeout(100 * attempt); // Small exponential backoff
+          await this.page.waitForTimeout(TEST_CONFIG.TIMEOUTS.ANIMATION); // Small exponential backoff
         }
       }
     }
@@ -288,76 +354,17 @@ export abstract class BasePage {
     return element.isVisible();
   }
 
-  async waitForUrl(url: string) {
-    try {
-      await this.page.waitForURL(url, {
-        waitUntil: 'networkidle',
-        timeout: 10000
-      });
-
-      // Wait for hydration after URL change
-      await this.waitForHydration(5000);
-    } catch (error) {
-      if (!this.page.isClosed()) {
-        await this.page.screenshot({ 
-          path: `test-results/url-wait-error-${Date.now()}.png` 
-        });
-      }
-      throw error;
-    }
-  }
-
   async safeClick(selector: string) {
     try {
       await this.page.waitForSelector(selector, { 
         state: 'visible',
-        timeout: 5000 
+        timeout: TEST_CONFIG.TIMEOUTS.RETRY
       });
       await this.page.click(selector);
     } catch (error) {
       console.error(`Failed to click ${selector}:`, error);
       await this.logPageState('click-failed');
       throw error;
-    }
-  }
-  
-  async ensureAuthentication() {
-    try {
-      const hasTokens = await this.page.evaluate(() => {
-        return !!localStorage.getItem('supabase.auth.token');
-      });
-      
-      if (!hasTokens) {
-        await this.page.evaluate(() => {
-          const testSession = {
-            access_token: 'test-access-token',
-            refresh_token: 'test-refresh-token',
-            expires_at: Date.now() + 3600000
-          };
-
-          localStorage.setItem('supabase.auth.token', JSON.stringify({
-            currentSession: testSession,
-            expiresAt: testSession.expires_at
-          }));
-        });
-        
-        await this.page.reload({ waitUntil: 'networkidle' });
-      }
-    } catch (error) {
-      console.error('Failed to ensure authentication:', error);
-      throw error;
-    }
-  }
-
-  protected async takeErrorScreenshot(name: string) {
-    try {
-      const timestamp = Date.now();
-      await this.page.screenshot({ 
-        path: `test-results/${name}-${timestamp}.png`,
-        fullPage: true 
-      });
-    } catch (error) {
-      console.error('Failed to take error screenshot:', error);
     }
   }
 } 

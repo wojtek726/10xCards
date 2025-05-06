@@ -9,18 +9,6 @@ export const test = base.extend({
     page.setDefaultNavigationTimeout(10000);
     context.setDefaultTimeout(10000);
     
-    // Mock API endpoints that should always be mocked
-    await page.route('**/api/auth/session', route => {
-      route.fulfill({
-        status: 200,
-        body: JSON.stringify({
-          user: null,
-          accessToken: null,
-          error: null
-        })
-      });
-    });
-
     // Add error handling
     page.on('pageerror', error => {
       console.error('Page error:', error);

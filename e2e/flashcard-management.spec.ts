@@ -177,4 +177,82 @@ test.describe('Flashcard Management', () => {
       throw error;
     }
   });
+
+  test('should create new flashcard successfully', async ({ page }) => {
+    // Arrange
+    const listPage = new FlashcardsListPage(page);
+    const testFlashcard = {
+      front: 'Co to jest TDD?',
+      back: 'Test Driven Development - metodyka tworzenia oprogramowania'
+    };
+
+    // Mock endpoints
+    await page.route('**/api/flashcards', async route => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([])
+        });
+      } else if (method === 'POST') {
+        const requestBody = JSON.parse(await route.request().postData() || '{}');
+        route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: '1',
+            ...requestBody,
+            created_at: new Date().toISOString()
+          })
+        });
+      }
+    });
+
+    try {
+      // Act
+      await listPage.navigateToFlashcardsList();
+      await page.waitForLoadState('networkidle');
+      
+      // Kliknij przycisk tworzenia nowej fiszki
+      await page.getByTestId('create-flashcard-button').click();
+      
+      // Wypełnij formularz
+      await page.getByTestId('flashcard-front-input').fill(testFlashcard.front);
+      await page.getByTestId('flashcard-back-input').fill(testFlashcard.back);
+      
+      // Zrób zrzut ekranu przed zapisaniem
+      await page.screenshot({ path: 'test-results/before-save-flashcard.png' });
+      
+      // Kliknij przycisk zapisu i poczekaj na odpowiedź serwera
+      await Promise.all([
+        page.waitForResponse(response => 
+          response.url().includes('/api/flashcards') && 
+          response.status() === 201
+        ),
+        page.getByTestId('save-flashcard-button').click()
+      ]);
+
+      // Assert
+      // Sprawdź czy toast jest widoczny
+      const toastMessage = await page.getByText('Fiszka została utworzona');
+      await expect(toastMessage).toBeVisible({ timeout: 5000 });
+      
+      // Sprawdź czy fiszka pojawiła się na liście
+      const flashcardFront = await page.getByText(testFlashcard.front);
+      await expect(flashcardFront).toBeVisible({ timeout: 5000 });
+      
+      // Zrób zrzut ekranu po utworzeniu
+      await page.screenshot({ path: 'test-results/after-create-flashcard.png' });
+
+    } catch (error) {
+      console.error('Failed to create flashcard:', error);
+      if (!page.isClosed()) {
+        await page.screenshot({ path: 'test-results/create-flashcard-error.png', fullPage: true });
+        console.log('Current URL:', page.url());
+        console.log('Page content:', await page.content());
+      }
+      throw error;
+    }
+  });
 }); 

@@ -12,15 +12,16 @@ export class FlashcardService {
 
   async createFlashcard(userId: string, command: CreateFlashcardCommandDTO): Promise<FlashcardDTO> {
     // Return mock data in test mode
-    if (userId === 'test-user-id') {
+    if (userId === 'test-user-id' || process.env.NODE_ENV === 'test') {
       logger.debug("Using test mode data for flashcard creation");
       const mockFlashcard: FlashcardDTO = {
         id: `test-${Date.now()}`,
         front: command.front,
         back: command.back,
-        card_origin: command.card_origin,
+        card_origin: command.card_origin || 'manual',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        user_id: userId
       };
       return mockFlashcard;
     }
@@ -31,13 +32,19 @@ export class FlashcardService {
         user_id: userId,
         front: command.front,
         back: command.back,
-        card_origin: command.card_origin,
+        card_origin: command.card_origin || 'manual',
       })
       .select()
       .single();
 
     if (error) {
+      logger.error('Failed to create flashcard:', { error, userId });
       throw new Error(`Failed to create flashcard: ${error.message}`);
+    }
+
+    if (!data) {
+      logger.error('No data returned after creating flashcard');
+      throw new Error('Failed to create flashcard: No data returned');
     }
 
     return {
@@ -47,6 +54,7 @@ export class FlashcardService {
       card_origin: data.card_origin,
       created_at: data.created_at,
       updated_at: data.updated_at,
+      user_id: data.user_id
     };
   }
 

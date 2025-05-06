@@ -105,7 +105,10 @@ export default function Navbar({ user }: NavbarProps) {
                     </svg>
                     <span className="sr-only">Profil</span>
                   </Button>
-                  <div className={`absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 ${isProfileMenuOpen ? 'block' : 'hidden'} hover:block`}>
+                  <div 
+                    className={`absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 ${isProfileMenuOpen ? 'block' : 'hidden'}`} 
+                    data-testid="user-menu"
+                  >
                     <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-testid="profile-link">
                       Zarządzaj kontem
                     </a>

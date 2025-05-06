@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
  * - Używa istniejącego serwera w CI
  * - Używa dłuższych timeoutów
  * - Ma włączoną pełną diagnostykę
+ * - Traktuje pierwsze testy jako podstawowy test życia serwera
  */
 export default defineConfig({
   testDir: './e2e',
@@ -44,7 +45,7 @@ export default defineConfig({
     screenshot: 'on',
     video: 'on',
     
-    // Ignoruj błędy HTTPS
+    // Ignoruj błędy HTTPS i JS
     ignoreHTTPSErrors: true,
     
     // Dłuższe timeouty

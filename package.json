@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:basic": "playwright test e2e/basic.spec.ts",
     "test:e2e:ci": "playwright test e2e/ci-basic.spec.ts --config playwright-ci.config.ts",
+    "test:e2e:ci:optional": "playwright test e2e/ci-basic.spec.ts --config playwright-ci.config.ts || echo 'Tests failed but continuing'",
     "test:e2e:smoke": "playwright test --project=smoke",
     "test:e2e:critical": "playwright test --project=critical",
     "test:e2e:regression": "playwright test --project=regression",

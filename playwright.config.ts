@@ -69,8 +69,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev:test',
-    url: process.env.CI ? 'http://localhost:3000' : 'http://localhost:4321',
+    command: process.env.CI ? 'mkdir -p ./public/test && echo \'{"status": "ok"}\' > ./public/test/health.json && npm run dev:test' : 'npm run dev:test',
+    url: process.env.CI ? 'http://localhost:3000/test/health.json' : 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
@@ -78,6 +78,7 @@ export default defineConfig({
     env: {
       RUNNING_E2E: 'true',
       NODE_ENV: 'test',
+      TEST_MODE: 'true',
       PORT: process.env.CI ? '3000' : '4321',
       HOST: 'localhost',
       SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'

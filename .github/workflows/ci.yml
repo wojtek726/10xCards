@@ -105,40 +105,57 @@ jobs:
         run: |
           echo "Starting application with the following environment:"
           echo "NODE_ENV: $NODE_ENV"
+          echo "RUNNING_E2E: $RUNNING_E2E"
           echo "Has PUBLIC_SUPABASE_URL: $([ -n "$PUBLIC_SUPABASE_URL" ] && echo "Yes" || echo "No")"
           echo "Has PUBLIC_SUPABASE_ANON_KEY: $([ -n "$PUBLIC_SUPABASE_ANON_KEY" ] && echo "Yes" || echo "No")"
           echo "Has SUPABASE_SERVICE_ROLE_KEY: $([ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo "Yes" || echo "No")"
           
-          npx astro dev --host 0.0.0.0 &
+          # Explicitly set test mode headers
+          export RUNNING_E2E=true
+          export TEST_MODE=true
+          
+          # Start the app with explicit host and port
+          npx astro dev --host 0.0.0.0 --port 3000 &
           APP_PID=$!
           echo "Application started with PID $APP_PID"
           
           # Give the app a moment to initialize
-          sleep 10
+          sleep 15
           ps -p $APP_PID || echo "Warning: Process not found"
         env:
           NODE_ENV: test
-          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RUNNING_E2E: true
+          TEST_MODE: true
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || 'https://test-supabase-url.co' }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key' }}
           DEBUG: ${{ github.event.inputs.debug_enabled == 'true' && 'pw:api' || '' }}
 
       - name: Wait for application to start
         run: |
           echo "Waiting for application to be ready..."
-          # Try to check health endpoint with debugging output
-          for i in {1..10}; do
+          
+          # Create a simple endpoint without middleware for testing
+          mkdir -p ./public/test
+          echo '{"status": "ok"}' > ./public/test/health.json
+          
+          # Try to check health endpoint with debugging output and test mode flag
+          for i in {1..5}; do
             echo "Attempt $i to connect to health endpoint..."
-            curl -v http://0.0.0.0:3000/api/health || true
+            echo "Checking public test file first:"
+            curl -v http://0.0.0.0:3000/test/health.json || true
+            echo "Checking health API with test flag:"
+            curl -v -H "x-test-mode: true" http://0.0.0.0:3000/api/health?test=true || true
             sleep 5
           done
           
-          # Use wait-on with longer timeout
-          npx wait-on -v http://0.0.0.0:3000/api/health -t 120000 --httpTimeout 60000 || {
+          # Try to use both endpoints for wait-on
+          npx wait-on -v "http://0.0.0.0:3000/test/health.json" "http://0.0.0.0:3000/api/health?test=true" -t 60000 --httpTimeout 30000 || {
             echo "Health check failed. Checking environment..."
-            env | grep -i supabase || true
-            echo "Fetching health endpoint response:"
-            curl -v http://0.0.0.0:3000/api/health || true
+            env | grep -i 'test\|node\|supa' || true
+            echo "Fetching health endpoint response with test mode header:"
+            curl -v -H "x-test-mode: true" http://0.0.0.0:3000/api/health?test=true || true
+            curl -v http://0.0.0.0:3000/test/health.json || true
             exit 1
           }
           echo "Application is ready!"
@@ -158,6 +175,7 @@ jobs:
         run: |
           echo "Checking network status..."
           netstat -tulpn || true
+          curl -v -H "x-test-mode: true" http://localhost:3000/api/health?test=true || true
           curl -v http://localhost:3000 || true
 
       - name: Debug - Check logs

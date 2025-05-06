@@ -7,27 +7,57 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { request, cookies, locals } = context;
   const url = new URL(request.url);
   
+  // Bypass middleware completely for health endpoint in test mode
+  if (url.pathname === '/api/health' && 
+      (url.searchParams.has('test') || request.headers.get('x-test-mode') === 'true' || 
+       process.env.NODE_ENV === 'test' || process.env.RUNNING_E2E === 'true')) {
+    logger.debug(`[Middleware] Bypassing middleware for health endpoint in test mode`);
+    return next();
+  }
+  
   // Bypass authentication checks for test mode
   const isTestMode = 
     url.searchParams.has('test') || 
     request.headers.get('x-test-mode') === 'true' || 
-    (typeof process !== 'undefined' && process.env.RUNNING_E2E === 'true');
+    process.env.TEST_MODE === 'true' ||
+    (typeof process !== 'undefined' && 
+     (process.env.RUNNING_E2E === 'true' || process.env.NODE_ENV === 'test'));
     
   if (isTestMode) {
     logger.debug(`[Middleware] Test mode detected, bypassing auth checks`);
-    if (!url.pathname.startsWith('/auth/login')) {
-      locals.user = {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        role: 'authenticated',
-        aud: 'authenticated',
-        app_metadata: { provider: 'email' },
-        user_metadata: {},
-        created_at: new Date().toISOString()
-      } as User;
+    try {
+      // In test mode, don't try to create a real Supabase client
+      // This prevents issues with missing env vars in CI
+      if (!url.pathname.startsWith('/auth/login')) {
+        locals.user = {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          role: 'authenticated',
+          aud: 'authenticated',
+          app_metadata: { provider: 'email' },
+          user_metadata: {},
+          created_at: new Date().toISOString()
+        } as User;
+      }
+      
+      try {
+        locals.supabase = createServerClient(cookies);
+      } catch (e) {
+        logger.warn(`[Middleware] Cannot create Supabase client in test mode, using mock`);
+        // Provide a minimal mock if client creation fails
+        locals.supabase = {
+          auth: {
+            getUser: () => Promise.resolve({ data: { user: locals.user }, error: null }),
+            signOut: () => Promise.resolve({ error: null })
+          }
+        } as any;
+      }
+      return next();
+    } catch (error) {
+      logger.error(`[Middleware] Error in test mode:`, error);
+      // Continue with next() even if there's an error in test mode
+      return next();
     }
-    locals.supabase = createServerClient(cookies);
-    return next();
   }
   
   // Check if this is a logout request

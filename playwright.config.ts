@@ -37,7 +37,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: 'http://localhost:4321',
+    baseURL: process.env.CI ? 'http://localhost:3000' : 'http://localhost:4321',
     /* Collect trace when retrying the failed test */
     trace: 'retain-on-failure',
     /* Take screenshots on failure */
@@ -70,7 +70,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev:test',
-    url: 'http://localhost:4321',
+    url: process.env.CI ? 'http://localhost:3000' : 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
@@ -78,7 +78,7 @@ export default defineConfig({
     env: {
       RUNNING_E2E: 'true',
       NODE_ENV: 'test',
-      PORT: '4321',
+      PORT: process.env.CI ? '3000' : '4321',
       HOST: 'localhost',
       SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'
     },

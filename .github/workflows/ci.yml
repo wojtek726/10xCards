@@ -171,7 +171,32 @@ jobs:
       - name: Run basic E2E tests
         run: |
           echo "Running basic E2E tests with CI configuration"
-          npm run test:e2e:ci
+          echo "Node version: $(node -v)"
+          echo "NPM version: $(npm -v)"
+          echo "Playwright version: $(npx playwright -V)"
+          
+          # Upewnij się, że serwer jest dostępny
+          echo "Checking if server is ready..."
+          curl -v http://localhost:3000/test/health.json || true
+          
+          # Uruchom testy i zapisz logi
+          echo "Starting tests..."
+          npm run test:e2e:ci > playwright-output.log 2>&1 || {
+            echo "Tests failed. Log output:"
+            cat playwright-output.log
+            exit 1
+          }
+          
+      # Upload logs for debugging
+      - name: Upload Playwright logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-logs
+          path: |
+            playwright-output.log
+            test-results/
+          retention-days: 5
 
       # Full E2E suite (may have some failures)
       - name: Run full E2E tests

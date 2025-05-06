@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Specjalna konfiguracja Playwright dla środowiska CI
- * - Nie uruchamia webServer (używa istniejącego)
+ * - Używa istniejącego serwera w CI
  * - Używa dłuższych timeoutów
  * - Ma włączoną pełną diagnostykę
  */
@@ -68,8 +68,13 @@ export default defineConfig({
     }
   ],
   
-  // Nie uruchamiaj lokalnego serwera - używaj istniejącego
-  // webServer: undefined,
+  // Używaj istniejącego serwera w CI
+  webServer: {
+    command: 'echo "Using existing server"',
+    url: 'http://localhost:3000/test/health.json',
+    reuseExistingServer: true,
+    timeout: 60000,
+  },
   
   // Katalog wyjściowy
   outputDir: 'test-results/ci',

@@ -46,6 +46,13 @@ module.exports = {
       }
     },
     {
+      // Allow any in middleware for test mocks
+      files: ["src/middleware/**/*"],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    },
+    {
       files: ["*.astro"],
       parser: "astro-eslint-parser",
       parserOptions: {

@@ -47,10 +47,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         // Provide a minimal mock if client creation fails
         locals.supabase = {
           auth: {
-            getUser: () => Promise.resolve({ data: { user: locals.user }, error: null }),
+            getUser: () => Promise.resolve({ data: { user: locals.user || {} as User }, error: null }),
             signOut: () => Promise.resolve({ error: null })
           }
-        } as any;
+        } as any; // Mock for test environment
       }
       return next();
     } catch (error) {

@@ -7,6 +7,9 @@ import { TEST_CONFIG } from './e2e/test.config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Determine if we're in CI
+const isCI = !!process.env.CI;
+
 /**
  * See https://playwright.dev/docs/test-configuration
  */
@@ -37,7 +40,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.CI ? 'http://localhost:3000' : 'http://localhost:4321',
+    baseURL: isCI ? 'http://localhost:3000' : 'http://localhost:4321',
     /* Collect trace when retrying the failed test */
     trace: 'retain-on-failure',
     /* Take screenshots on failure */
@@ -68,10 +71,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: process.env.CI ? 'mkdir -p ./public/test && echo \'{"status": "ok"}\' > ./public/test/health.json && npm run dev:test' : 'npm run dev:test',
-    url: process.env.CI ? 'http://localhost:3000/test/health.json' : 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
+  webServer: isCI ? undefined : {
+    command: 'npm run dev:test',
+    url: 'http://localhost:4321',
+    reuseExistingServer: true,
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 60000,
@@ -79,7 +82,7 @@ export default defineConfig({
       RUNNING_E2E: 'true',
       NODE_ENV: 'test',
       TEST_MODE: 'true',
-      PORT: process.env.CI ? '3000' : '4321',
+      PORT: '4321',
       HOST: 'localhost',
       SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key'
     },

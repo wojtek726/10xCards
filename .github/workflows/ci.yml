@@ -169,11 +169,13 @@ jobs:
 
       # Run basic tests first (must pass)
       - name: Run basic E2E tests
-        run: npm run test:e2e:ci
+        run: |
+          echo "Running basic E2E tests with CI configuration"
+          npm run test:e2e:ci
 
       # Full E2E suite (may have some failures)
       - name: Run full E2E tests
-        run: echo "Skipping full E2E tests in CI due to middleware issues" # npm run test:e2e || echo "Some tests failed but continuing"
+        run: echo "Skipping full E2E tests in CI due to middleware issues"
         continue-on-error: true
 
       # Debug steps
